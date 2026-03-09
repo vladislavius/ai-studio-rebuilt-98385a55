@@ -14,7 +14,6 @@ import { Loader2 } from 'lucide-react';
 
 const Index = () => {
   const { session, user, loading, isAdmin, signOut } = useAuth();
-  const employeeCount = 0;
   const nav = useNavigation();
 
   if (loading) {
@@ -41,7 +40,6 @@ const Index = () => {
         isSidebarCollapsed={nav.isSidebarCollapsed}
         isMobileMenuOpen={nav.isMobileMenuOpen}
         isAdmin={isAdmin}
-        employeeCount={employeeCount}
         onViewChange={nav.handleViewChange}
         onStatisticsView={nav.handleStatisticsView}
         onToggleSidebar={nav.toggleSidebar}
@@ -60,7 +58,7 @@ const Index = () => {
 
         <div className="flex-1 p-4 md:p-8">
           {nav.currentView === 'command_center' && (
-            <CommandCenterPage isAdmin={isAdmin} employeeCount={employeeCount} />
+            <CommandCenterPage isAdmin={isAdmin} />
           )}
           {nav.currentView === 'org_chart' && <OrgChartPage />}
           {nav.currentView === 'employees' && isAdmin && (
