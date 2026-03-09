@@ -725,49 +725,139 @@ function ReviewView({ scale }: { scale: AdminScale }) {
 
 // ─── Reference Panel ───
 function ReferencePanel({ onClose }: { onClose: () => void }) {
+  const LEVEL_ITEMS = [
+    { n: 1, title: 'Цель', desc: '«Зачем играть?» Абстрактно и долгосрочно.', color: 'hsl(var(--primary))' },
+    { n: 2, title: 'Замыслы', desc: 'Намерения для конкретных видов деятельности.', color: 'hsl(var(--primary))' },
+    { n: 3, title: 'Политика', desc: 'Неизменные правила. Обеспечивают координацию.', color: 'hsl(var(--muted-foreground))' },
+    { n: 4, title: 'Планы', desc: 'Широкие краткосрочные намерения. Ещё не разбиты на действия.', color: 'hsl(210,60%,50%)' },
+    { n: 5, title: 'Программы', desc: 'Последовательность задач для выполнения плана.', color: 'hsl(270,50%,50%)' },
+    { n: 6, title: 'Проекты', desc: 'Программа меньшего масштаба для одного сложного шага.', color: 'hsl(170,60%,40%)' },
+    { n: 7, title: 'Приказы', desc: '«Сделай это сейчас». Тактика на местах.', color: 'hsl(0,72%,51%)' },
+    { n: 8, title: 'Идеальная картина', desc: 'Как должна выглядеть область в идеале.', color: 'hsl(var(--muted-foreground))' },
+    { n: 9, title: 'Статистики', desc: 'Количественные показатели выполненной работы.', color: 'hsl(145,60%,40%)' },
+    { n: 10, title: 'ЦКП', desc: 'Завершённый результат, который обменивается на ресурсы.', color: 'hsl(30,80%,50%)' },
+  ];
+
+  const PRINCIPLES = [
+    'Любая идея лучше, чем её полное отсутствие.',
+    'Результата можно добиться только при выполнении программы.',
+    'Запущенная программа требует руководства.',
+    'Программа без руководства провалится.',
+    'Любая программа требует финансирования.',
+    'Программа требует постоянного внимания.',
+    'Лучшая программа затрагивает максимум уровней.',
+    'Программы должны сами себя финансировать.',
+    'Привлекайте помощь своими положительными сторонами.',
+    'Программа плоха, если уводит от работающих программ.',
+    'Не вкладывай больше, чем предполагаемая отдача.',
+    'Новая программа не должна наносить ущерб действующим.',
+  ];
+
+  const TASK_TYPES_REF = [
+    { icon: '👥', title: 'Первоочередные', color: STEP_TYPE_COLORS.primary,
+      desc: 'Организационные, кадровые, коммуникационные шаги. «Само собой разумеющиеся» — именно их чаще всего пропускают, и именно из-за этого программа рухнет.',
+      examples: '«Прочитайте программу» · «Свяжитесь с офисом» · «Передайте ответственному» · «Изучите ссылки»' },
+    { icon: '⚠', title: 'Жизненно важные', color: STEP_TYPE_COLORS.vital,
+      desc: 'Формируются после инспекции. Устраняют угрозы выживанию проекта. Что нельзя не делать в процессе выполнения.',
+      examples: '«Поддерживайте связь с офисом в процессе» · «Проводите инспекции — смотрите своими глазами»' },
+    { icon: '🔍', title: 'Условные (Если…то)', color: STEP_TYPE_COLORS.conditional,
+      desc: 'Разведка, сбор данных, проверка осуществимости. Без них план оторван от реальности.',
+      examples: '«УСЛОВНАЯ: Если нет ответственного — назначьте одного из руководителей» · «УСЛОВНАЯ: Если завязли — применяйте технологию дебага»' },
+    { icon: '⚙', title: 'Текущие (рабочие)', color: STEP_TYPE_COLORS.operating,
+      desc: 'Конкретные направления действий с указанием кто, что и когда. Основная масса шагов программы.',
+      examples: '«Составьте список из 20 людей» · «Каждую неделю писать письма 5 людям из списка» · «Оформите выставку в приёмной»' },
+    { icon: '📊', title: 'Производственные', color: STEP_TYPE_COLORS.production,
+      desc: 'Устанавливают квоты и количественные показатели. Работают ТОЛЬКО при наличии всех остальных типов задач.',
+      examples: '«Проводить не менее 5 экскурсий в неделю» · «Заключить 50 контрактов к концу месяца»' },
+  ];
+
+  const ERRORS = [
+    { title: 'Пропуск первоочередных', desc: 'Самая частая причина провала. «Само собой разумеется» — не значит «не надо писать». Пишите всё явно.' },
+    { title: 'Производственные без остальных', desc: 'Статистика взлетит и рухнет. Квоты без инфраструктуры не работают.' },
+    { title: 'Разрыв в иерархии шкалы', desc: 'Нет цели → замыслы бессмысленны. Нет плана → программу не к чему прикрепить. Каждый уровень опирается на предыдущий.' },
+    { title: 'Проект вместо шага', desc: 'Проект создаётся только тогда, когда шаг оказался слишком объёмным. Не надо создавать проект на каждый шаг.' },
+  ];
+
   return (
-    <div className="fixed right-0 top-0 bottom-0 w-[380px] max-w-full bg-card border-l border-border z-50 overflow-y-auto shadow-2xl">
-      <div className="sticky top-0 bg-accent p-4 border-b border-border flex items-center justify-between">
+    <div className="fixed right-0 top-0 bottom-0 w-[420px] max-w-full bg-card border-l border-border z-50 overflow-y-auto shadow-2xl">
+      <div className="sticky top-0 bg-accent p-4 border-b border-border flex items-center justify-between z-10">
         <h3 className="font-display font-bold text-foreground">📚 Справочник</h3>
-        <button onClick={onClose} className="text-muted-foreground hover:text-foreground">✕</button>
+        <button onClick={onClose} className="text-muted-foreground hover:text-foreground text-lg">✕</button>
       </div>
       <div className="p-4 space-y-6 text-xs font-body">
+
+        {/* Ключевая концепция */}
         <div>
-          <p className="text-[10px] font-display font-bold text-primary tracking-widest mb-2 pb-1 border-b border-border">КЛЮЧЕВАЯ КОНЦЕПЦИЯ</p>
-          <div className="bg-destructive/5 border border-destructive/20 rounded p-2 text-destructive mb-2">
-            <strong>‼ Важно:</strong> Шаги программы и задачи — это одно и то же.
+          <p className="text-[10px] font-display font-bold text-primary tracking-widest mb-2 pb-1 border-b border-border">КЛЮЧЕВАЯ КОНЦЕПЦИЯ: ШАГИ И ЗАДАЧИ</p>
+          <div className="bg-destructive/5 border border-destructive/20 rounded p-2 text-destructive mb-3">
+            <strong>‼ Важно:</strong> Шаги программы и задачи — это одно и то же. Каждый шаг программы называется задачей. Нет отдельных «задач внутри шага» — сам шаг и есть задача определённого типа.
           </div>
-          {[
-            { title: '📋 Программа', desc: 'Упорядоченная последовательность шагов (= задач) для выполнения плана.', color: 'hsl(var(--primary))' },
-            { title: '📌 Шаг = Задача', desc: 'Конкретное действие. Каждому шагу присваивается тип, исполнитель и дедлайн.', color: 'hsl(210,60%,50%)' },
-            { title: '🔧 Проект', desc: 'Создаётся ТОЛЬКО когда один шаг оказался слишком объёмным.', color: 'hsl(170,60%,40%)' },
-          ].map((item, i) => (
-            <div key={i} className="p-2 rounded bg-accent/30 border-l-[3px] mb-2" style={{ borderLeftColor: item.color }}>
-              <p className="font-bold" style={{ color: item.color }}>{item.title}</p>
-              <p className="text-muted-foreground">{item.desc}</p>
+          <div className="p-2.5 rounded bg-accent/30 border-l-[3px] mb-2" style={{ borderLeftColor: 'hsl(var(--primary))' }}>
+            <p className="font-bold" style={{ color: 'hsl(var(--primary))' }}>📋 Программа</p>
+            <p className="text-muted-foreground">Упорядоченная последовательность шагов (= задач) для выполнения плана. Шаги нумеруются: 1, 2, 3 или А, Б, В. Каждый шаг поручается конкретному человеку.</p>
+          </div>
+          <div className="p-2.5 rounded bg-accent/30 border-l-[3px] mb-2" style={{ borderLeftColor: 'hsl(210,60%,50%)' }}>
+            <p className="font-bold" style={{ color: 'hsl(210,60%,50%)' }}>📌 Шаг программы = Задача</p>
+            <p className="text-muted-foreground">Конкретное действие. Каждому шагу присваивается тип (первоочередной, жизненно важный и т.д.), исполнитель и дедлайн. Подряд идущие шаги одного типа могут группироваться в раздел.</p>
+            <p className="text-muted-foreground/70 italic mt-1">Пример: «1. Прочитайте программу» — Первоочередная задача. «Условная: Если нет руководителя — назначьте его» — Условная задача.</p>
+          </div>
+          <div className="p-2.5 rounded bg-accent/30 border-l-[3px] mb-2" style={{ borderLeftColor: 'hsl(170,60%,40%)' }}>
+            <p className="font-bold" style={{ color: 'hsl(170,60%,40%)' }}>🔧 Проект</p>
+            <p className="text-muted-foreground">Программа меньшего масштаба, создаётся ТОЛЬКО для выполнения одного конкретного шага, если тот оказался слишком объёмным. Позволяет не терять фокус на общей программе.</p>
+            <p className="text-muted-foreground/70 italic mt-1">«Вместо того чтобы зацикливаться на одном шаге — определяете Проект, намечаете шаги, выполняете их.»</p>
+          </div>
+        </div>
+
+        {/* 5 типов задач */}
+        <div>
+          <p className="text-[10px] font-display font-bold text-primary tracking-widest mb-2 pb-1 border-b border-border">5 ТИПОВ ЗАДАЧ (ШАГОВ ПРОГРАММЫ)</p>
+          <div className="bg-destructive/5 border border-destructive/20 rounded p-2 text-destructive mb-3">
+            <strong>Критический порядок:</strong> Сначала первоочередные → жизненно важные → условные → текущие. Производственные — только после всех остальных!
+          </div>
+          {TASK_TYPES_REF.map((t, i) => (
+            <div key={i} className="p-2.5 rounded bg-accent/30 border-l-[3px] mb-2" style={{ borderLeftColor: t.color }}>
+              <p className="font-bold" style={{ color: t.color }}>{t.icon} {t.title}</p>
+              <p className="text-muted-foreground">{t.desc}</p>
+              <p className="text-muted-foreground/70 italic mt-1">{t.examples}</p>
             </div>
           ))}
         </div>
 
+        {/* 10 уровней шкалы */}
         <div>
-          <p className="text-[10px] font-display font-bold text-primary tracking-widest mb-2 pb-1 border-b border-border">5 ТИПОВ ЗАДАЧ</p>
-          <div className="bg-destructive/5 border border-destructive/20 rounded p-2 text-destructive mb-2">
-            <strong>Критический порядок:</strong> Первоочередные → Жизненно важные → Условные → Текущие → Производственные!
+          <p className="text-[10px] font-display font-bold text-primary tracking-widest mb-2 pb-1 border-b border-border">АДМИНИСТРАТИВНАЯ ШКАЛА (10 УРОВНЕЙ)</p>
+          <div className="space-y-1">
+            {LEVEL_ITEMS.map(l => (
+              <div key={l.n} className="py-1.5 px-2.5 rounded border-l-[3px] bg-accent/20" style={{ borderLeftColor: l.color }}>
+                <span className="font-bold" style={{ color: l.color }}>{l.n}. {l.title}</span>
+                <span className="text-muted-foreground"> — {l.desc}</span>
+              </div>
+            ))}
           </div>
-          {Object.entries(STEP_TYPES).map(([k, v]) => (
-            <div key={k} className="p-2 rounded bg-accent/30 border-l-[3px] mb-2" style={{ borderLeftColor: STEP_TYPE_COLORS[k] }}>
-              <p className="font-bold" style={{ color: STEP_TYPE_COLORS[k] }}>{v.icon} {v.label}</p>
-              <p className="text-muted-foreground">{v.hint}</p>
+        </div>
+
+        {/* 12 принципов */}
+        <div>
+          <p className="text-[10px] font-display font-bold text-primary tracking-widest mb-2 pb-1 border-b border-border">12 ПРИНЦИПОВ ПРОГРАММИРОВАНИЯ</p>
+          <div className="space-y-1">
+            {PRINCIPLES.map((p, i) => (
+              <div key={i} className="py-1.5 px-2.5 bg-accent/20 rounded text-foreground/80">
+                {i + 1}. {p}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Типичные ошибки */}
+        <div>
+          <p className="text-[10px] font-display font-bold text-primary tracking-widest mb-2 pb-1 border-b border-border">ТИПИЧНЫЕ ОШИБКИ</p>
+          {ERRORS.map((e, i) => (
+            <div key={i} className="bg-destructive/5 border border-destructive/20 rounded p-2 text-destructive mb-2">
+              <strong>{e.title}</strong> — {e.desc}
             </div>
           ))}
         </div>
 
-        <div>
-          <p className="text-[10px] font-display font-bold text-primary tracking-widest mb-2 pb-1 border-b border-border">10 УРОВНЕЙ ШКАЛЫ</p>
-          {['🎯 Цель', '💡 Замыслы', '📜 Политика', '🗺 Планы', '⚡ Программы', '🔧 Проекты', '📢 Приказы', '🌟 Идеальная картина', '📈 Статистики', '🏆 ЦКП'].map((l, i) => (
-            <p key={i} className="py-1 text-foreground/80">{i + 1}. {l}</p>
-          ))}
-        </div>
       </div>
     </div>
   );
