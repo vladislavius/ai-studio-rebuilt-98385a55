@@ -76,10 +76,11 @@ export function EmployeeList({ onEdit }: EmployeeListProps) {
             const mainSubDept = empSubDepts[0];
 
             return (
-              <div
+              <CyberneticCard
                 key={emp.id}
-                className="bg-card border border-border rounded-xl overflow-hidden hover:border-primary/30 transition-all cursor-pointer group relative"
+                glowColor={mainDept?.color ?? 'hsl(var(--primary))'}
                 onClick={() => onEdit(emp.id)}
+              >
               >
                 {/* Color bar top */}
                 <div className="h-1.5 w-full" style={{ backgroundColor: mainDept?.color ?? 'hsl(var(--muted))' }} />
