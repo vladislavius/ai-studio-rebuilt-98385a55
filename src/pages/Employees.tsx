@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, UserPlus } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { EmployeeSubView, DocumentsSubView, ListSubView } from '@/types';
 import { EMPLOYEE_TABS, DOCUMENTS_TABS, LIST_TABS } from '@/constants/navigation';
 import { EmployeeList } from '@/components/employees/EmployeeList';
@@ -7,6 +7,7 @@ import { EmployeeForm } from '@/components/employees/EmployeeForm';
 import { AddEmployeeWizard } from '@/components/employees/AddEmployeeWizard';
 import { BirthdayList } from '@/components/employees/BirthdayList';
 import { useEmployees } from '@/hooks/useEmployees';
+import { TubelightTabs } from '@/components/ui/tubelight-tabs';
 
 interface EmployeesPageProps {
   employeeSubView: EmployeeSubView;
@@ -43,22 +44,12 @@ export function EmployeesPage({
       {/* Tab bar */}
       <div className="bg-card p-4 md:p-5 rounded-xl border border-border space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex bg-accent p-1.5 rounded-lg self-start sm:self-auto flex-wrap gap-1.5">
-            {EMPLOYEE_TABS.map(tab => (
-              <button
-                key={tab.id}
-                onClick={() => setEmployeeSubView(tab.id)}
-                className={`px-4 py-2.5 text-sm font-display font-semibold rounded-lg transition-all flex items-center gap-2 ${
-                  employeeSubView === tab.id
-                    ? 'bg-card text-primary shadow-sm'
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                <tab.icon size={16} />
-                <span className="hidden sm:inline">{tab.label}</span>
-              </button>
-            ))}
-          </div>
+          <TubelightTabs
+            items={EMPLOYEE_TABS}
+            activeId={employeeSubView}
+            onSelect={(id) => setEmployeeSubView(id as EmployeeSubView)}
+            variant="compact"
+          />
 
           <div className="flex items-center gap-3">
             {employeeSubView === 'list' && employees && (
@@ -80,42 +71,22 @@ export function EmployeesPage({
 
         {/* List sub-tabs */}
         {employeeSubView === 'list' && (
-          <div className="flex bg-accent p-1.5 rounded-lg gap-1.5">
-            {LIST_TABS.map(tab => (
-              <button
-                key={tab.id}
-                onClick={() => setListSubView(tab.id)}
-                className={`flex-1 px-4 py-2.5 text-sm font-display font-semibold rounded-lg transition-all flex items-center justify-center gap-2 ${
-                  listSubView === tab.id
-                    ? 'bg-card text-primary shadow-sm'
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                <tab.icon size={16} />
-                <span>{tab.label}</span>
-              </button>
-            ))}
-          </div>
+          <TubelightTabs
+            items={LIST_TABS}
+            activeId={listSubView}
+            onSelect={(id) => setListSubView(id as ListSubView)}
+            variant="pill"
+          />
         )}
 
         {/* Document sub-tabs */}
         {employeeSubView === 'documents' && (
-          <div className="flex bg-accent p-1.5 rounded-lg gap-1.5">
-            {DOCUMENTS_TABS.map(tab => (
-              <button
-                key={tab.id}
-                onClick={() => setDocumentsSubView(tab.id)}
-                className={`flex-1 px-4 py-2.5 text-sm font-display font-semibold rounded-lg transition-all flex items-center justify-center gap-2 ${
-                  documentsSubView === tab.id
-                    ? 'bg-card text-secondary shadow-sm'
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                <tab.icon size={16} />
-                <span>{tab.label}</span>
-              </button>
-            ))}
-          </div>
+          <TubelightTabs
+            items={DOCUMENTS_TABS}
+            activeId={documentsSubView}
+            onSelect={(id) => setDocumentsSubView(id as DocumentsSubView)}
+            variant="pill"
+          />
         )}
       </div>
 
