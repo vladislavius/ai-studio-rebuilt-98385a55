@@ -4,7 +4,9 @@ import { EmployeeSubView, DocumentsSubView, ListSubView } from '@/types';
 import { EMPLOYEE_TABS, DOCUMENTS_TABS, LIST_TABS } from '@/constants/navigation';
 import { EmployeeList } from '@/components/employees/EmployeeList';
 import { EmployeeForm } from '@/components/employees/EmployeeForm';
+import { AddEmployeeWizard } from '@/components/employees/AddEmployeeWizard';
 import { BirthdayList } from '@/components/employees/BirthdayList';
+import { useEmployees } from '@/hooks/useEmployees';
 
 interface EmployeesPageProps {
   employeeSubView: EmployeeSubView;
@@ -24,15 +26,19 @@ export function EmployeesPage({
   setDocumentsSubView,
 }: EmployeesPageProps) {
   const [showForm, setShowForm] = useState(false);
+  const [showWizard, setShowWizard] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
+  const { data: employees } = useEmployees();
 
-  const openCreate = () => { setEditId(null); setShowForm(true); };
+  const openCreate = () => { setShowWizard(true); };
   const openEdit = (id: string) => { setEditId(id); setShowForm(true); };
   const closeForm = () => { setShowForm(false); setEditId(null); };
+  const closeWizard = () => { setShowWizard(false); };
 
   return (
     <div className="space-y-4">
       {showForm && <EmployeeForm employeeId={editId} onClose={closeForm} />}
+      {showWizard && <AddEmployeeWizard onClose={closeWizard} />}
 
       {/* Tab bar */}
       <div className="bg-card p-4 md:p-5 rounded-xl border border-border space-y-4">
@@ -54,14 +60,22 @@ export function EmployeesPage({
             ))}
           </div>
 
-          {employeeSubView === 'list' && (
-            <button
-              onClick={openCreate}
-              className="px-4 py-2 bg-primary text-primary-foreground font-display font-bold rounded-xl hover:bg-primary/90 transition-all flex items-center gap-2 text-sm"
-            >
-              {listSubView === 'employees' ? <><Plus size={16} /> <span className="hidden sm:inline">Сотрудник</span></> : <><UserPlus size={16} /> <span className="hidden sm:inline">Кандидат</span></>}
-            </button>
-          )}
+          <div className="flex items-center gap-3">
+            {employeeSubView === 'list' && employees && (
+              <span className="text-xs font-display font-semibold text-muted-foreground bg-accent px-3 py-1.5 rounded-lg">
+                ВСЕГО: {employees.length}
+              </span>
+            )}
+            {employeeSubView === 'list' && (
+              <button
+                onClick={openCreate}
+                className="px-4 py-2 bg-primary text-primary-foreground font-display font-bold rounded-xl hover:bg-primary/90 transition-all flex items-center gap-2 text-sm"
+              >
+                <Plus size={16} />
+                <span className="hidden sm:inline">Сотрудник</span>
+              </button>
+            )}
+          </div>
         </div>
 
         {/* List sub-tabs */}
