@@ -141,11 +141,11 @@ function DepartmentColumn({
           <div className="flex items-center gap-2">
             <span
               className="w-6 h-6 rounded-md flex items-center justify-center text-[10px] font-display font-bold text-card"
-              style={{ backgroundColor: dept.color ?? '#4C5CFF' }}
+              style={{ backgroundColor: dept.color ?? 'hsl(var(--primary))' }}
             >
-              {dept.sort_order}
+              {dept.sort_order === 0 ? '7' : dept.sort_order}
             </span>
-            <h3 className="text-sm font-display font-bold text-foreground">{dept.name.replace(/^Отд\. \d+ — /, '')}</h3>
+            <h3 className="text-sm font-display font-bold text-foreground">{dept.name}</h3>
           </div>
           <div className="flex items-center gap-1 text-xs text-muted-foreground font-display">
             <Users size={11} />
