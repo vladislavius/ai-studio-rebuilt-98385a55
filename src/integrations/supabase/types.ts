@@ -95,6 +95,27 @@ export type Database = {
           },
         ]
       }
+      company_settings: {
+        Row: {
+          id: string
+          key: string
+          updated_at: string
+          value: string
+        }
+        Insert: {
+          id?: string
+          key: string
+          updated_at?: string
+          value?: string
+        }
+        Update: {
+          id?: string
+          key?: string
+          updated_at?: string
+          value?: string
+        }
+        Relationships: []
+      }
       course_progress: {
         Row: {
           certified: boolean | null
@@ -184,6 +205,41 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      department_diagnostics: {
+        Row: {
+          created_at: string
+          department_id: string
+          id: string
+          sort_order: number | null
+          text: string
+          type: string
+        }
+        Insert: {
+          created_at?: string
+          department_id: string
+          id?: string
+          sort_order?: number | null
+          text: string
+          type: string
+        }
+        Update: {
+          created_at?: string
+          department_id?: string
+          id?: string
+          sort_order?: number | null
+          text?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "department_diagnostics_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       departments: {
         Row: {
