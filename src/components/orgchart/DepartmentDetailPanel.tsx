@@ -1,10 +1,32 @@
 import { useState } from 'react';
 import { DBDepartment } from '@/hooks/useDepartments';
-import { X, BookOpen, Pencil, Users, Search, TrendingUp, ChevronDown } from 'lucide-react';
+import { X, BookOpen, Pencil, Users, Search, ChevronDown, ChevronUp, AlertTriangle, Rocket } from 'lucide-react';
 import { useStatisticDefinitions } from '@/hooks/useStatistics';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { LineChart, Line, ResponsiveContainer, Tooltip } from 'recharts';
+
+// Diagnostic data per department code
+const DIAGNOSTICS: Record<string, { problems: string[]; actions: string[] }> = {
+  dept7: {
+    problems: [
+      'Отсутствие стратегического планирования',
+      'Снижение финансовых резервов',
+      'Юридические проблемы и риски',
+      'Низкая координация между отделами',
+      'Падение общей прибыльности',
+      'Отсутствие долгосрочного видения',
+    ],
+    actions: [
+      'Разработать стратегический план на год',
+      'Провести аудит юридического соответствия',
+      'Установить систему KPI для всех отделов',
+      'Создать резервный фонд компании',
+      'Наладить еженедельные совещания директоров',
+      'Внедрить систему управленческой отчетности',
+    ],
+  },
+};
 
 interface Props {
   dept: DBDepartment;
@@ -22,11 +44,12 @@ interface Props {
   onClose: () => void;
 }
 
-type Tab = 'info' | 'functions' | 'employees';
-
 export function DepartmentDetailPanel({ dept, allDepts, employees, onClose }: Props) {
   const [search, setSearch] = useState('');
   const [statPeriod, setStatPeriod] = useState('3');
+  const [expandedStatId, setExpandedStatId] = useState<string | null>(null);
+  const [showDiagnostics, setShowDiagnostics] = useState(false);
+
   const { data: statDefs } = useStatisticDefinitions('department', dept.id);
   const { data: allStatValues } = useQuery({
     queryKey: ['all-stat-values-dept', dept.id],
@@ -45,32 +68,32 @@ export function DepartmentDetailPanel({ dept, allDepts, employees, onClose }: Pr
   });
   const statValues = allStatValues ?? [];
 
-  const deptEmployees = employees.filter(e => (e.department_ids ?? []).includes(dept.id));
+  const children = allDepts.filter(d => d.parent_id === dept.id).sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+  const deptAndChildIds = [dept.id, ...children.map(c => c.id)];
+  const deptEmployees = employees.filter(e => (e.department_ids ?? []).some(id => deptAndChildIds.includes(id)));
   const filteredEmployees = deptEmployees.filter(e =>
     e.full_name.toLowerCase().includes(search.toLowerCase())
   );
 
-  // Stats for this department
   const deptStatDefs = (statDefs ?? []).filter(
     s => s.owner_type === 'department' && s.owner_id === dept.id
   );
 
   const getStatChartData = (defId: string) => {
-    const values = (statValues ?? [])
+    return (statValues ?? [])
       .filter(v => v.definition_id === defId)
       .sort((a, b) => a.date.localeCompare(b.date))
-      .slice(-parseInt(statPeriod) * 7);
-    return values.map(v => ({
-      date: new Date(v.date).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' }),
-      value: v.value,
-    }));
+      .slice(-parseInt(statPeriod) * 7)
+      .map(v => ({
+        date: new Date(v.date).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' }),
+        value: v.value,
+      }));
   };
 
   const getLatestValue = (defId: string) => {
     const values = (statValues ?? []).filter(v => v.definition_id === defId);
     if (values.length === 0) return null;
-    const sorted = [...values].sort((a, b) => b.date.localeCompare(a.date));
-    return sorted[0];
+    return [...values].sort((a, b) => b.date.localeCompare(a.date))[0];
   };
 
   const getTrend = (defId: string) => {
@@ -84,7 +107,7 @@ export function DepartmentDetailPanel({ dept, allDepts, employees, onClose }: Pr
     return Math.round(((curr - prev) / Math.abs(prev)) * 100);
   };
 
-  const children = allDepts.filter(d => d.parent_id === dept.id);
+  const diagnostics = DIAGNOSTICS[dept.code] ?? null;
 
   return (
     <div className="fixed inset-y-0 right-0 w-full max-w-lg bg-card border-l border-border z-50 overflow-y-auto shadow-2xl animate-in slide-in-from-right-full duration-300">
@@ -93,13 +116,14 @@ export function DepartmentDetailPanel({ dept, allDepts, employees, onClose }: Pr
         <div className="flex items-center gap-3">
           <span
             className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-display font-bold text-card"
-            style={{ backgroundColor: dept.color ?? '#4C5CFF' }}
+            style={{ backgroundColor: dept.color ?? 'hsl(var(--primary))' }}
           >
             {dept.sort_order}
           </span>
-          <h2 className="text-lg font-display font-bold text-foreground">
-            {dept.name.replace(/^Отд\. \d+ — /, '')}
-          </h2>
+          <div>
+            <h2 className="text-lg font-display font-bold text-foreground">{dept.name}</h2>
+            {dept.full_name && <p className="text-xs text-muted-foreground font-body">{dept.full_name}</p>}
+          </div>
         </div>
         <div className="flex items-center gap-2">
           <button className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
@@ -126,23 +150,24 @@ export function DepartmentDetailPanel({ dept, allDepts, employees, onClose }: Pr
           </p>
         </section>
 
-        {/* Main Stat */}
-        <section>
-          <p className="text-[10px] font-display font-bold text-muted-foreground uppercase tracking-widest mb-2">Главная статистика</p>
-          <div className="border-2 border-primary/30 rounded-xl p-4 bg-primary/5">
-            <p className="text-xs font-display font-bold text-primary uppercase">📈 Главная статистика</p>
-            <p className="text-xs font-body text-muted-foreground mt-1">
-              {dept.main_stat ?? 'Статистика не указана'}
+        {/* VFP */}
+        {dept.vfp && (
+          <section>
+            <p className="text-[10px] font-display font-bold text-muted-foreground uppercase tracking-widest mb-2">
+              👑 ЦКП Департамента
             </p>
-          </div>
-        </section>
+            <div className="border-l-4 border-primary pl-4 bg-primary/5 rounded-r-lg py-3 pr-3">
+              <p className="text-sm font-body text-foreground italic leading-relaxed">"{dept.vfp}"</p>
+            </div>
+          </section>
+        )}
 
-        {/* All Department Stats */}
+        {/* Statistics */}
         {deptStatDefs.length > 0 && (
           <section>
             <div className="flex items-center justify-between mb-3">
               <p className="text-[10px] font-display font-bold text-muted-foreground uppercase tracking-widest">
-                📊 Все статистики департамента
+                📊 Статистики департамента
               </p>
               <select
                 value={statPeriod}
@@ -154,15 +179,39 @@ export function DepartmentDetailPanel({ dept, allDepts, employees, onClose }: Pr
                 <option value="12">12 Нед.</option>
               </select>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-3">
               {deptStatDefs.map(def => {
                 const chartData = getStatChartData(def.id);
                 const latest = getLatestValue(def.id);
                 const trend = getTrend(def.id);
+                const isExpanded = expandedStatId === def.id;
                 return (
                   <div key={def.id} className="bg-muted/50 border border-border rounded-xl p-4">
-                    <p className="text-xs font-display font-bold text-foreground uppercase mb-0.5">{def.title}</p>
+                    <div className="flex items-start justify-between mb-1">
+                      <p className="text-xs font-display font-bold text-foreground uppercase flex-1">{def.title}</p>
+                      {def.purpose && (
+                        <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-display font-bold ml-2 flex-shrink-0">
+                          {def.purpose}
+                        </span>
+                      )}
+                    </div>
                     <p className="text-[10px] font-body text-muted-foreground mb-2">{def.description ?? ''}</p>
+
+                    {/* Expandable details */}
+                    <button
+                      onClick={() => setExpandedStatId(isExpanded ? null : def.id)}
+                      className="flex items-center gap-1 text-[10px] text-primary font-display font-bold mb-2 hover:underline"
+                    >
+                      {isExpanded ? <ChevronUp size={10} /> : <ChevronDown size={10} />}
+                      {isExpanded ? 'Скрыть' : 'Подробнее'}
+                    </button>
+                    {isExpanded && def.calculation_method && (
+                      <div className="bg-card border border-border rounded-lg p-3 mb-2">
+                        <p className="text-[10px] font-display font-bold text-muted-foreground uppercase mb-1">Метод расчёта</p>
+                        <p className="text-xs font-body text-muted-foreground">{def.calculation_method}</p>
+                      </div>
+                    )}
+
                     {latest ? (
                       <>
                         <div className="flex items-baseline gap-2 mb-2">
@@ -179,10 +228,10 @@ export function DepartmentDetailPanel({ dept, allDepts, employees, onClose }: Pr
                           <div className="h-16">
                             <ResponsiveContainer width="100%" height="100%">
                               <LineChart data={chartData}>
-                                <Line type="monotone" dataKey="value" stroke={dept.color ?? '#4C5CFF'} strokeWidth={2} dot={false} />
+                                <Line type="monotone" dataKey="value" stroke={dept.color ?? 'hsl(var(--primary))'} strokeWidth={2} dot={false} />
                                 <Tooltip
-                                  contentStyle={{ background: 'hsl(0 0% 8%)', border: '1px solid hsl(0 0% 16%)', borderRadius: '8px', fontSize: '10px' }}
-                                  labelStyle={{ color: 'hsl(0 0% 55%)' }}
+                                  contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', fontSize: '10px' }}
+                                  labelStyle={{ color: 'hsl(var(--muted-foreground))' }}
                                 />
                               </LineChart>
                             </ResponsiveContainer>
@@ -191,8 +240,7 @@ export function DepartmentDetailPanel({ dept, allDepts, employees, onClose }: Pr
                       </>
                     ) : (
                       <div className="bg-muted rounded-lg p-3 text-center">
-                        <p className="text-[10px] font-display font-bold text-muted-foreground uppercase">Недостаточно данных</p>
-                        <p className="text-[10px] font-body text-muted-foreground/60">Требуется минимум 2 значения</p>
+                        <p className="text-[10px] font-display font-bold text-muted-foreground uppercase">Нет данных</p>
                       </div>
                     )}
                   </div>
@@ -202,24 +250,53 @@ export function DepartmentDetailPanel({ dept, allDepts, employees, onClose }: Pr
           </section>
         )}
 
-        {/* VFP */}
-        {dept.vfp && (
+        {/* Diagnostics */}
+        {diagnostics && (
           <section>
-            <p className="text-[10px] font-display font-bold text-muted-foreground uppercase tracking-widest mb-2">
-              👑 Ценный конечный продукт (ЦКП)
-            </p>
-            <div className="border-l-4 border-primary pl-4">
-              <p className="text-sm font-body text-foreground italic">"{dept.vfp}"</p>
-            </div>
+            <button
+              onClick={() => setShowDiagnostics(!showDiagnostics)}
+              className="w-full flex items-center justify-between text-[10px] font-display font-bold text-muted-foreground uppercase tracking-widest mb-2 hover:text-foreground transition-colors"
+            >
+              <span>🔍 Диагностика и развитие</span>
+              {showDiagnostics ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+            </button>
+            {showDiagnostics && (
+              <div className="grid grid-cols-1 gap-3">
+                <div className="bg-destructive/5 border border-destructive/20 rounded-xl p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <AlertTriangle size={14} className="text-destructive" />
+                    <p className="text-xs font-display font-bold text-destructive">Признаки проблем</p>
+                  </div>
+                  <ul className="space-y-1">
+                    {diagnostics.problems.map((p, i) => (
+                      <li key={i} className="text-xs font-body text-muted-foreground flex items-start gap-2">
+                        <span className="text-destructive mt-0.5">•</span> {p}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="bg-green-500/5 border border-green-500/20 rounded-xl p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Rocket size={14} className="text-green-500" />
+                    <p className="text-xs font-display font-bold text-green-500">Первоочередные действия</p>
+                  </div>
+                  <ul className="space-y-1">
+                    {diagnostics.actions.map((a, i) => (
+                      <li key={i} className="text-xs font-body text-muted-foreground flex items-start gap-2">
+                        <span className="text-green-500 mt-0.5">•</span> {a}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            )}
           </section>
         )}
 
         {/* Goal */}
         {dept.goal && (
           <section>
-            <p className="text-[10px] font-display font-bold text-muted-foreground uppercase tracking-widest mb-2">
-              🎯 Цель
-            </p>
+            <p className="text-[10px] font-display font-bold text-muted-foreground uppercase tracking-widest mb-2">🎯 Цель</p>
             <p className="text-sm font-body text-muted-foreground">{dept.goal}</p>
           </section>
         )}
@@ -231,32 +308,49 @@ export function DepartmentDetailPanel({ dept, allDepts, employees, onClose }: Pr
               <Users size={16} className="text-muted-foreground" />
             </div>
             <div>
-              <p className="text-[10px] font-display font-bold text-muted-foreground uppercase tracking-widest">
-                Ответственный руководитель
-              </p>
+              <p className="text-[10px] font-display font-bold text-muted-foreground uppercase tracking-widest">Руководитель</p>
               <p className="text-sm font-display font-semibold text-foreground">{dept.manager_name ?? '—'}</p>
             </div>
           </div>
         </section>
 
-        {/* Subdivisions */}
+        {/* Subdivisions with details */}
         {children.length > 0 && (
           <section>
-            <p className="text-[10px] font-display font-bold text-muted-foreground uppercase tracking-widest mb-2">
-              🏢 Подразделения ({children.length})
+            <p className="text-[10px] font-display font-bold text-muted-foreground uppercase tracking-widest mb-3">
+              🏢 Отделы департамента ({children.length})
             </p>
-            <div className="space-y-2">
-              {children.map(child => (
-                <div key={child.id} className="bg-muted/50 border border-border rounded-lg p-3 flex items-center justify-between">
-                  <div>
-                    <p className="text-xs font-display font-semibold text-foreground">{child.name}</p>
-                    <p className="text-[10px] font-body text-muted-foreground">• {child.manager_name ?? '—'}</p>
+            <div className="space-y-3">
+              {children.map(child => {
+                const childEmps = employees.filter(e => (e.department_ids ?? []).includes(child.id));
+                return (
+                  <div key={child.id} className="bg-muted/30 border border-border rounded-xl overflow-hidden">
+                    <div className="h-1" style={{ backgroundColor: child.color ?? dept.color ?? 'hsl(var(--primary))' }} />
+                    <div className="p-4">
+                      <div className="flex items-center justify-between mb-1">
+                        <p className="text-xs font-display font-bold text-foreground">{child.name}</p>
+                        <span className="text-xs text-muted-foreground font-display">{childEmps.length}</span>
+                      </div>
+                      <p className="text-[10px] font-body text-muted-foreground mb-2">
+                        {child.description ?? ''}
+                      </p>
+                      {child.vfp && (
+                        <div className="border-l-2 border-primary/40 pl-2 mb-2">
+                          <p className="text-[10px] font-display text-primary font-bold uppercase">ЦКП</p>
+                          <p className="text-[10px] font-body text-muted-foreground italic">{child.vfp}</p>
+                        </div>
+                      )}
+                      <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground font-body">
+                        <span>👤</span>
+                        <span>{child.manager_name ?? '—'}</span>
+                      </div>
+                      {child.main_stat && (
+                        <p className="text-[10px] text-primary/70 font-display mt-1">📈 {child.main_stat}</p>
+                      )}
+                    </div>
                   </div>
-                  <span className="text-xs text-muted-foreground font-display">
-                    {employees.filter(e => (e.department_ids ?? []).includes(child.id)).length}
-                  </span>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </section>
         )}
@@ -282,7 +376,7 @@ export function DepartmentDetailPanel({ dept, allDepts, employees, onClose }: Pr
           {filteredEmployees.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground/50">
               <Users size={24} className="mx-auto mb-2 opacity-30" />
-              <p className="text-xs font-body">Нет сотрудников в этом отделе</p>
+              <p className="text-xs font-body">Нет сотрудников</p>
             </div>
           ) : (
             <div className="space-y-2">
@@ -300,10 +394,6 @@ export function DepartmentDetailPanel({ dept, allDepts, employees, onClose }: Pr
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-display font-semibold text-foreground truncate">{emp.full_name}</p>
                     <p className="text-xs font-body text-primary truncate">{emp.position}</p>
-                    <div className="flex items-center gap-3 mt-1 text-[10px] text-muted-foreground font-body">
-                      {emp.nickname && <span>• {emp.nickname}</span>}
-                      {emp.phone && <span>📞 {emp.phone}</span>}
-                    </div>
                   </div>
                 </div>
               ))}
