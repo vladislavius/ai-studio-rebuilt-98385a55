@@ -35,8 +35,8 @@ export function OrgChartPage() {
   return (
     <div className="space-y-6 relative">
       <div>
-        <h1 className="text-2xl md:text-3xl font-display font-bold text-foreground mb-1">Организационная структура</h1>
-        <p className="text-sm text-muted-foreground font-body">Оргсхема «Остров Сокровищ» — {allDepts.length} отделений</p>
+        <h1 className="text-2xl md:text-3xl font-display font-bold text-foreground mb-1">Организационная структура компании</h1>
+        <p className="text-sm text-muted-foreground font-body">Оргсхема «Остров Сокровищ» — {rootDepts.length} департаментов, {allDepts.length - rootDepts.length} отделов</p>
       </div>
 
       {/* Founder & Executive Director */}
