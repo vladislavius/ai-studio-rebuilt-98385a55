@@ -104,7 +104,7 @@ export function EmployeeForm({ employeeId, onClose }: EmployeeFormProps) {
 
   useEffect(() => {
     if (existing) {
-      const ec = (existing.emergency_contacts as EmergencyContact[] | null) ?? [];
+      const ec = (existing.emergency_contacts as unknown as EmergencyContact[] | null) ?? [];
       setForm({
         full_name: existing.full_name ?? '',
         position: existing.position ?? '',
