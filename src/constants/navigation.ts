@@ -1,4 +1,4 @@
-import { Home, Network, LayoutGrid, GraduationCap, TrendingUp, Settings, Cake, UserCheck, FileText, BarChart3, Users, UserPlus, Upload, FileDown } from 'lucide-react';
+import { Home, Network, LayoutGrid, GraduationCap, TrendingUp, Settings, Cake, UserCheck, FileText, BarChart3, Users, UserPlus, Upload, FileDown, Scale } from 'lucide-react';
 import { ViewMode, EmployeeSubView, DocumentsSubView, ListSubView } from '@/types';
 
 interface NavItem {
@@ -20,6 +20,10 @@ export const STATS_NAV = {
   label: 'Дашборд ОС',
   icon: TrendingUp,
 };
+
+export const TOOLS_NAV: NavItem[] = [
+  { id: 'admin_scale', label: 'Админ Шкала', icon: Scale },
+];
 
 export const SETTINGS_NAV = {
   id: 'settings' as ViewMode,

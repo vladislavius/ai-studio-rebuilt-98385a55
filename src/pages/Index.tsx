@@ -9,6 +9,7 @@ import { EmployeesPage } from '@/pages/Employees';
 import { AcademyPage } from '@/pages/Academy';
 import { StatisticsPage } from '@/pages/Statistics';
 import { SettingsPage } from '@/pages/SettingsPage';
+import { AdminScalePage } from '@/pages/AdminScale';
 import { AuthPage } from '@/pages/AuthPage';
 import { Loader2 } from 'lucide-react';
 
@@ -76,6 +77,7 @@ const Index = () => {
             <StatisticsPage selectedDeptId={nav.selectedDept} />
           )}
           {nav.currentView === 'settings' && isAdmin && <SettingsPage />}
+          {nav.currentView === 'admin_scale' && <AdminScalePage />}
         </div>
       </main>
 

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { ChevronLeft, ChevronRight, ChevronDown, X, LogOut } from 'lucide-react';
-import { MAIN_NAV, STATS_NAV, SETTINGS_NAV } from '@/constants/navigation';
+import { MAIN_NAV, STATS_NAV, SETTINGS_NAV, TOOLS_NAV } from '@/constants/navigation';
 import { useDepartments } from '@/hooks/useDepartments';
 import { useEmployees } from '@/hooks/useEmployees';
 import { ViewMode } from '@/types';
@@ -102,6 +102,24 @@ export function AppSidebar({
             selectedDept={selectedDept}
             onSelectDept={onStatisticsView}
           />
+        </div>
+
+        <div className="mt-4 md:mt-6 border-t border-sidebar-border pt-3 md:pt-4">
+          {!isSidebarCollapsed && (
+            <p className="px-3 md:px-4 text-xs font-display font-semibold text-muted-foreground uppercase tracking-wider mb-2 md:mb-3">
+              Инструменты
+            </p>
+          )}
+          {TOOLS_NAV.map(item => (
+            <SidebarButton
+              key={item.id}
+              icon={<item.icon size={18} />}
+              label={item.label}
+              isActive={currentView === item.id}
+              isCollapsed={isSidebarCollapsed}
+              onClick={() => onViewChange(item.id)}
+            />
+          ))}
         </div>
 
         {isAdmin && (

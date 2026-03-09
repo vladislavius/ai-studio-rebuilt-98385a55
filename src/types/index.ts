@@ -120,7 +120,7 @@ export interface StatisticValue {
 }
 
 // Navigation
-export type ViewMode = 'command_center' | 'employees' | 'org_chart' | 'statistics' | 'settings' | 'academy';
+export type ViewMode = 'command_center' | 'employees' | 'org_chart' | 'statistics' | 'settings' | 'academy' | 'admin_scale';
 export type EmployeeSubView = 'list' | 'birthdays' | 'onboarding' | 'documents' | 'candidates' | 'reports';
 export type ListSubView = 'employees' | 'candidates';
 export type DocumentsSubView = 'sent' | 'received' | 'closing';
