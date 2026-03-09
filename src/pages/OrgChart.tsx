@@ -1,22 +1,32 @@
 import { useState } from 'react';
 import { useDepartments, DBDepartment } from '@/hooks/useDepartments';
 import { useEmployees } from '@/hooks/useEmployees';
-import { Crown, Users, ChevronRight } from 'lucide-react';
+import { useCompanySettings } from '@/hooks/useOrgChartMutations';
+import { useAuth } from '@/hooks/useAuth';
+import { Users, Plus, Settings, Pencil } from 'lucide-react';
 import { DepartmentDetailPanel } from '@/components/orgchart/DepartmentDetailPanel';
+import { DepartmentEditModal } from '@/components/orgchart/DepartmentEditModal';
+import { CreateDepartmentModal } from '@/components/orgchart/CreateDepartmentModal';
+import { CompanySettingsModal } from '@/components/orgchart/CompanySettingsModal';
+import { Button } from '@/components/ui/button';
 
 export function OrgChartPage() {
   const { data: departments, isLoading } = useDepartments();
   const { data: employees } = useEmployees();
+  const { data: settings } = useCompanySettings();
+  const { isAdmin } = useAuth();
+
   const [selectedDeptId, setSelectedDeptId] = useState<string | null>(null);
+  const [editDept, setEditDept] = useState<DBDepartment | null>(null);
+  const [createParent, setCreateParent] = useState<DBDepartment | null | undefined>(undefined); // undefined = closed
+  const [showCompanySettings, setShowCompanySettings] = useState(false);
 
   if (isLoading) return <div className="text-center py-12 text-muted-foreground text-sm">Загрузка оргсхемы...</div>;
 
   const allDepts = departments ?? [];
   const emps = employees ?? [];
-
-  // Root departments (no parent)
   const rootDepts = allDepts.filter(d => !d.parent_id).sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
-  // Subdivisions grouped by parent
+
   const getChildren = (parentId: string) =>
     allDepts.filter(d => d.parent_id === parentId).sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
 
@@ -25,35 +35,65 @@ export function OrgChartPage() {
 
   const getTotalEmployeeCount = (deptId: string) => {
     const children = getChildren(deptId);
-    const directCount = getEmployeeCount(deptId);
-    const childCount = children.reduce((sum, c) => sum + getEmployeeCount(c.id), 0);
-    return directCount + childCount;
+    return getEmployeeCount(deptId) + children.reduce((sum, c) => sum + getEmployeeCount(c.id), 0);
   };
 
   const selectedDept = selectedDeptId ? allDepts.find(d => d.id === selectedDeptId) : null;
 
+  const s = settings ?? {};
+
   return (
     <div className="space-y-6 relative">
-      <div>
-        <h1 className="text-2xl md:text-3xl font-display font-bold text-foreground mb-1">Организационная структура компании</h1>
-        <p className="text-sm text-muted-foreground font-body">Оргсхема «Остров Сокровищ» — {rootDepts.length} департаментов, {allDepts.length - rootDepts.length} отделов</p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-display font-bold text-foreground mb-1">Организационная структура компании</h1>
+          <p className="text-sm text-muted-foreground font-body">
+            Оргсхема — {rootDepts.length} департаментов, {allDepts.length - rootDepts.length} отделов
+          </p>
+        </div>
+        {isAdmin && (
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => setShowCompanySettings(true)}>
+              <Settings size={14} className="mr-1" /> Настройки
+            </Button>
+            <Button size="sm" onClick={() => setCreateParent(null)}>
+              <Plus size={14} className="mr-1" /> Департамент
+            </Button>
+          </div>
+        )}
       </div>
 
-      {/* Founder & Executive Director */}
+      {/* Founder & CEO */}
       <div className="flex flex-col items-center gap-0">
-        <div className="bg-[#FFD700] border-2 border-[#DAA520] rounded-xl px-10 py-4 text-center relative shadow-lg">
-          <p className="text-sm font-display font-bold text-foreground">Основатель</p>
-          <p className="text-xs font-body text-foreground/70">Стратегическое руководство</p>
+        <div
+          className="bg-[#FFD700] border-2 border-[#DAA520] rounded-xl px-10 py-4 text-center relative shadow-lg group cursor-pointer"
+          onClick={() => isAdmin && setShowCompanySettings(true)}
+        >
+          <p className="text-sm font-display font-bold text-foreground">{s.founder_title ?? 'Основатель'}</p>
+          <p className="text-xs font-body text-foreground/70">{s.founder_subtitle ?? 'Стратегическое руководство'}</p>
+          {isAdmin && (
+            <span className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <Pencil size={12} className="text-foreground/50" />
+            </span>
+          )}
         </div>
         <div className="w-px h-6 bg-primary" />
-        <div className="bg-primary/10 border-2 border-primary rounded-xl px-10 py-4 text-center shadow-lg">
-          <p className="text-sm font-display font-bold text-foreground">Генеральный директор</p>
-          <p className="text-xs font-body text-foreground/70">Операционное управление</p>
+        <div
+          className="bg-primary/10 border-2 border-primary rounded-xl px-10 py-4 text-center shadow-lg group cursor-pointer"
+          onClick={() => isAdmin && setShowCompanySettings(true)}
+        >
+          <p className="text-sm font-display font-bold text-foreground">{s.ceo_title ?? 'Генеральный директор'}</p>
+          <p className="text-xs font-body text-foreground/70">{s.ceo_subtitle ?? 'Операционное управление'}</p>
+          {isAdmin && (
+            <span className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <Pencil size={12} className="text-foreground/50" />
+            </span>
+          )}
         </div>
         <div className="w-px h-6 bg-primary" />
       </div>
 
-      {/* Horizontal connector line */}
+      {/* Horizontal connector */}
       <div className="relative mx-4">
         <div className="absolute top-0 left-[calc(100%/14)] right-[calc(100%/14)] h-px bg-border" />
       </div>
@@ -71,6 +111,8 @@ export function OrgChartPage() {
               totalEmps={totalEmps}
               getEmployeeCount={getEmployeeCount}
               onSelect={(id) => setSelectedDeptId(id)}
+              onEdit={isAdmin ? (d) => setEditDept(d) : undefined}
+              onAddChild={isAdmin ? (d) => setCreateParent(d) : undefined}
               isSelected={selectedDeptId === dept.id}
             />
           );
@@ -79,20 +121,24 @@ export function OrgChartPage() {
 
       {/* Company Goal & VFP */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-3xl mx-auto">
-        <div className="bg-card border border-border rounded-xl p-6 text-center">
+        <div
+          className="bg-card border border-border rounded-xl p-6 text-center group cursor-pointer"
+          onClick={() => isAdmin && setShowCompanySettings(true)}
+        >
           <div className="text-2xl mb-2">🎯</div>
           <p className="text-xs font-display font-bold text-primary uppercase tracking-widest mb-3">Цель Компании</p>
           <p className="text-xs font-body text-muted-foreground leading-relaxed">
-            Быть лидером туристического рынка Таиланда. Стать ведущей международной компанией в сфере организации
-            незабываемых и интересных экскурсий, обеспечивая нашим туристам яркие впечатления и долгие воспоминания.
+            {s.company_goal ?? '—'}
           </p>
         </div>
-        <div className="bg-card border border-border rounded-xl p-6 text-center">
+        <div
+          className="bg-card border border-border rounded-xl p-6 text-center group cursor-pointer"
+          onClick={() => isAdmin && setShowCompanySettings(true)}
+        >
           <div className="text-2xl mb-2">👑</div>
           <p className="text-xs font-display font-bold text-primary uppercase tracking-widest mb-3">ЦКП Компании</p>
           <p className="text-xs font-body text-muted-foreground leading-relaxed">
-            Восторженные туристы, получившие незабываемые впечатления от интересных экскурсий, с радостью рекомендуют нас
-            другим и снова обращаются за нашими услугами.
+            {s.company_vfp ?? '—'}
           </p>
         </div>
       </div>
@@ -104,38 +150,56 @@ export function OrgChartPage() {
           allDepts={allDepts}
           employees={emps}
           onClose={() => setSelectedDeptId(null)}
+          isAdmin={isAdmin}
+          onEditDept={d => setEditDept(d)}
+          onAddChild={d => setCreateParent(d)}
         />
       )}
+
+      {/* Edit Modal */}
+      <DepartmentEditModal
+        dept={editDept}
+        open={!!editDept}
+        onClose={() => setEditDept(null)}
+      />
+
+      {/* Create Modal */}
+      <CreateDepartmentModal
+        open={createParent !== undefined}
+        onClose={() => setCreateParent(undefined)}
+        parentDept={createParent ?? null}
+        allDepts={allDepts}
+      />
+
+      {/* Company Settings Modal */}
+      <CompanySettingsModal
+        open={showCompanySettings}
+        onClose={() => setShowCompanySettings(false)}
+      />
     </div>
   );
 }
 
 function DepartmentColumn({
-  dept,
-  children,
-  totalEmps,
-  getEmployeeCount,
-  onSelect,
-  isSelected,
+  dept, children, totalEmps, getEmployeeCount, onSelect, onEdit, onAddChild, isSelected,
 }: {
   dept: DBDepartment;
   children: DBDepartment[];
   totalEmps: number;
   getEmployeeCount: (id: string) => number;
   onSelect: (id: string) => void;
+  onEdit?: (d: DBDepartment) => void;
+  onAddChild?: (d: DBDepartment) => void;
   isSelected: boolean;
 }) {
   return (
     <div
-      className={`rounded-xl border transition-all cursor-pointer ${
+      className={`rounded-xl border transition-all cursor-pointer group ${
         isSelected ? 'border-primary shadow-lg shadow-primary/10' : 'border-border hover:border-primary/30'
       } bg-card overflow-hidden`}
       onClick={() => onSelect(dept.id)}
     >
-      {/* Color top bar */}
       <div className="h-1" style={{ backgroundColor: dept.color ?? '#4C5CFF' }} />
-
-      {/* Header */}
       <div className="p-4">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
@@ -147,19 +211,27 @@ function DepartmentColumn({
             </span>
             <h3 className="text-sm font-display font-bold text-foreground">{dept.name}</h3>
           </div>
-          <div className="flex items-center gap-1 text-xs text-muted-foreground font-display">
-            <Users size={11} />
-            <span>{totalEmps}</span>
+          <div className="flex items-center gap-1">
+            {onEdit && (
+              <button
+                onClick={(e) => { e.stopPropagation(); onEdit(dept); }}
+                className="w-5 h-5 rounded flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-muted"
+              >
+                <Pencil size={10} className="text-muted-foreground" />
+              </button>
+            )}
+            <div className="flex items-center gap-1 text-xs text-muted-foreground font-display">
+              <Users size={11} />
+              <span>{totalEmps}</span>
+            </div>
           </div>
         </div>
 
-        {/* Manager */}
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-body mb-3">
           <span className="text-foreground/60">•</span>
           <span>{dept.manager_name ?? '—'}</span>
         </div>
 
-        {/* Subdivisions */}
         {children.length > 0 && (
           <div className="space-y-2">
             {children.map(child => {
@@ -167,16 +239,21 @@ function DepartmentColumn({
               return (
                 <div
                   key={child.id}
-                  className="bg-muted/50 rounded-lg p-3 border border-border/50"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onSelect(child.id);
-                  }}
+                  className="bg-muted/50 rounded-lg p-3 border border-border/50 group/child"
+                  onClick={(e) => { e.stopPropagation(); onSelect(child.id); }}
                 >
                   <div className="flex items-center justify-between mb-1">
                     <p className="text-[10px] font-display text-muted-foreground uppercase tracking-wider">
                       DIV {child.sort_order}
                     </p>
+                    {onEdit && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); onEdit(child); }}
+                        className="w-4 h-4 rounded flex items-center justify-center opacity-0 group-hover/child:opacity-100 transition-opacity hover:bg-muted"
+                      >
+                        <Pencil size={8} className="text-muted-foreground" />
+                      </button>
+                    )}
                   </div>
                   <p className="text-xs font-display font-semibold text-foreground mb-1">{child.full_name ?? child.name}</p>
                   <div className="flex items-center justify-between text-[10px] text-muted-foreground font-body">
@@ -191,6 +268,15 @@ function DepartmentColumn({
 
         {children.length === 0 && (
           <div className="text-[10px] text-muted-foreground/50 font-body italic">Нет подразделений</div>
+        )}
+
+        {onAddChild && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onAddChild(dept); }}
+            className="mt-2 w-full py-1.5 border border-dashed border-border rounded-lg text-[10px] text-muted-foreground font-display opacity-0 group-hover:opacity-100 transition-opacity hover:border-primary hover:text-primary flex items-center justify-center gap-1"
+          >
+            <Plus size={10} /> Добавить отдел
+          </button>
         )}
       </div>
     </div>
