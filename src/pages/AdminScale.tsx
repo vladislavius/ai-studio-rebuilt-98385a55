@@ -159,6 +159,7 @@ export function AdminScalePage() {
           onOpen={openScale}
           onDelete={deleteScale}
           onNewScale={() => setShowNewModal(true)}
+          onOpenRef={() => setRefOpen(true)}
           onLoadTemplate={(builder) => {
             const s = builder();
             createScale(s.name);
