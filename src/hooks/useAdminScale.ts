@@ -135,7 +135,7 @@ export function useAdminScales() {
 
   return {
     scales, currentScale, currentId, setCurrentId, loading,
-    createScale, deleteScale, updateScale,
+    createScale, addFullScale, deleteScale, updateScale,
   };
 }
 
