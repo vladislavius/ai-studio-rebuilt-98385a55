@@ -194,10 +194,9 @@ function DepartmentColumn({
   isSelected: boolean;
 }) {
   return (
-    <div
-      className={`rounded-xl border transition-all cursor-pointer group ${
-        isSelected ? 'border-primary shadow-lg shadow-primary/10' : 'border-border hover:border-primary/30'
-      } bg-card overflow-hidden`}
+    <CyberneticCard
+      glowColor={dept.color ?? 'hsl(var(--primary))'}
+      className={isSelected ? 'border-primary shadow-lg shadow-primary/10' : ''}
       onClick={() => onSelect(dept.id)}
     >
       <div className="h-1" style={{ backgroundColor: dept.color ?? '#4C5CFF' }} />
