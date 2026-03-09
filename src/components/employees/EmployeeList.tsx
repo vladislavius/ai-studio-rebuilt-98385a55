@@ -161,7 +161,7 @@ export function EmployeeList({ onEdit }: EmployeeListProps) {
                     )}
                   </div>
                 </div>
-              </div>
+              </CyberneticCard>
             );
           })}
         </div>
