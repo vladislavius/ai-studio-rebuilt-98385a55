@@ -1,140 +1,12 @@
 import { useState } from 'react';
 import { DBDepartment } from '@/hooks/useDepartments';
-import { X, BookOpen, Pencil, Users, Search, ChevronDown, ChevronUp, AlertTriangle, Rocket } from 'lucide-react';
+import { X, BookOpen, Pencil, Users, Search, ChevronDown, ChevronUp, AlertTriangle, Rocket, Plus } from 'lucide-react';
 import { useStatisticDefinitions } from '@/hooks/useStatistics';
+import { useDepartmentDiagnostics } from '@/hooks/useOrgChartMutations';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { LineChart, Line, ResponsiveContainer, Tooltip } from 'recharts';
-
-// Diagnostic data per department code
-const DIAGNOSTICS: Record<string, { problems: string[]; actions: string[] }> = {
-  dept7: {
-    problems: [
-      'Отсутствие стратегического планирования',
-      'Снижение финансовых резервов',
-      'Юридические проблемы и риски',
-      'Низкая координация между отделами',
-      'Падение общей прибыльности',
-      'Отсутствие долгосрочного видения',
-    ],
-    actions: [
-      'Разработать стратегический план на год',
-      'Провести аудит юридического соответствия',
-      'Установить систему KPI для всех отделов',
-      'Создать резервный фонд компании',
-      'Наладить еженедельные совещания директоров',
-      'Внедрить систему управленческой отчетности',
-    ],
-  },
-  dept1: {
-    problems: [
-      'Высокая текучесть кадров',
-      'Снижение эффективности с ростом штата',
-      'Неясность функций сотрудников',
-      'Хаос в документообороте',
-      'Долгая адаптация новичков',
-      'Отсутствие системы оценки',
-    ],
-    actions: [
-      'Создать актуальную оргсхему с именами',
-      'Сформировать должностные папки',
-      'Наладить еженедельный сбор статистик',
-      'Организовать работу приемной',
-      'Внедрить систему поощрений',
-      'Провести анализ узких мест в найме',
-    ],
-  },
-  dept2: {
-    problems: [
-      'Снижение количества новых клиентов',
-      'Падение конверсии из лидов в продажи',
-      'Рост стоимости привлечения клиента',
-      'Отсутствие эффективных рекламных материалов',
-      'Нерегулярные действия по продвижению',
-      'Непредсказуемые продажи',
-    ],
-    actions: [
-      'Установить контроль за откликами',
-      'Проанализировать эффективность рекламы',
-      'Разработать материалы по пониманию',
-      'Составить план рекламных кампаний',
-      'Наладить работу с базой клиентов',
-      'Внедрить реалистичное планирование продаж',
-    ],
-  },
-  dept3: {
-    problems: [
-      'Просроченная дебиторская задолженность',
-      'Отсутствие актуальных данных о маржинальности',
-      'Задержки в выплате заработной платы',
-      'Потери денег и имущества',
-      'Авралы в отчетные периоды',
-      'Штрафы от контролирующих органов',
-    ],
-    actions: [
-      'Составить долгосрочный бюджет',
-      'Организовать учет дебиторской задолженности',
-      'Наладить еженедельный подсчет маржинальности',
-      'Провести инвентаризацию имущества',
-      'Упорядочить складской учет',
-      'Автоматизировать управленческую отчетность',
-    ],
-  },
-  dept4: {
-    problems: [
-      'Срывы сроков выполнения заказов',
-      'Овербукинг в отелях и на экскурсиях',
-      'Технические сбои в бронированиях',
-      'Опоздания и поломки транспорта',
-      'Жалобы на качество обслуживания',
-      'Низкие рейтинги от туристов',
-    ],
-    actions: [
-      'Описать технологию предоставления услуг',
-      'Наладить планирование деятельности',
-      'Внедрить систему управления инвентарем',
-      'Установить GPS-мониторинг транспорта',
-      'Создать стандарты обслуживания',
-      'Организовать ежедневные отчеты',
-    ],
-  },
-  dept5: {
-    problems: [
-      'Рост жалоб клиентов',
-      'Снижение рейтингов',
-      'Нарушения стандартов качества',
-      'Недовольные клиенты остаются неулаженными',
-      'Отсутствие системы обучения',
-      'Квалификация сотрудников не повышается',
-    ],
-    actions: [
-      'Наладить улаживание недовольства клиентов',
-      'Ввести регулярные опросы клиентов',
-      'Разработать стандарты качества',
-      'Организовать Совет по качеству',
-      'Создать библиотеку обучающих материалов',
-      'Составить программы обучения для каждого сотрудника',
-    ],
-  },
-  dept6: {
-    problems: [
-      'Низкая узнаваемость компании',
-      'Негативные отзывы в интернете',
-      'Снижение новых клиентов',
-      'Неэффективные партнерские программы',
-      'Плохой внешний вид компании',
-      'Отсутствие вводных услуг',
-    ],
-    actions: [
-      'Привести в порядок внешний вид компании',
-      'Написать заметки в СМИ о деятельности',
-      'Организовать работу с довольными клиентами',
-      'Выявить и развивать партнерские связи',
-      'Провести опросы для выявления вводных услуг',
-      'Начать продвижение вводных программ',
-    ],
-  },
-};
+import { StatDefinitionEditModal } from './StatDefinitionEditModal';
 
 interface Props {
   dept: DBDepartment;
@@ -150,15 +22,22 @@ interface Props {
     telegram?: string | null;
   }>;
   onClose: () => void;
+  isAdmin?: boolean;
+  onEditDept?: (d: DBDepartment) => void;
+  onAddChild?: (d: DBDepartment) => void;
 }
 
-export function DepartmentDetailPanel({ dept, allDepts, employees, onClose }: Props) {
+export function DepartmentDetailPanel({ dept, allDepts, employees, onClose, isAdmin, onEditDept, onAddChild }: Props) {
   const [search, setSearch] = useState('');
   const [statPeriod, setStatPeriod] = useState('3');
   const [expandedStatId, setExpandedStatId] = useState<string | null>(null);
   const [showDiagnostics, setShowDiagnostics] = useState(false);
+  const [editingStat, setEditingStat] = useState<any>(null); // null=closed, object=edit, 'new'=create
+  const [showStatModal, setShowStatModal] = useState(false);
 
   const { data: statDefs } = useStatisticDefinitions('department', dept.id);
+  const { data: diagnosticsData } = useDepartmentDiagnostics(dept.id);
+
   const { data: allStatValues } = useQuery({
     queryKey: ['all-stat-values-dept', dept.id],
     queryFn: async () => {
@@ -186,6 +65,10 @@ export function DepartmentDetailPanel({ dept, allDepts, employees, onClose }: Pr
   const deptStatDefs = (statDefs ?? []).filter(
     s => s.owner_type === 'department' && s.owner_id === dept.id
   );
+
+  const problems = (diagnosticsData ?? []).filter(d => d.type === 'problem');
+  const actions = (diagnosticsData ?? []).filter(d => d.type === 'action');
+  const hasDiagnostics = problems.length > 0 || actions.length > 0;
 
   const getStatChartData = (defId: string) => {
     return (statValues ?? [])
@@ -215,8 +98,6 @@ export function DepartmentDetailPanel({ dept, allDepts, employees, onClose }: Pr
     return Math.round(((curr - prev) / Math.abs(prev)) * 100);
   };
 
-  const diagnostics = DIAGNOSTICS[dept.code] ?? null;
-
   return (
     <div className="fixed inset-y-0 right-0 w-full max-w-lg bg-card border-l border-border z-50 overflow-y-auto shadow-2xl animate-in slide-in-from-right-full duration-300">
       {/* Header */}
@@ -237,9 +118,14 @@ export function DepartmentDetailPanel({ dept, allDepts, employees, onClose }: Pr
           <button className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
             <BookOpen size={16} />
           </button>
-          <button className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground hover:bg-primary/90 transition-colors">
-            <Pencil size={16} />
-          </button>
+          {isAdmin && onEditDept && (
+            <button
+              onClick={() => onEditDept(dept)}
+              className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground hover:bg-primary/90 transition-colors"
+            >
+              <Pencil size={16} />
+            </button>
+          )}
           <button
             onClick={onClose}
             className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
@@ -271,12 +157,20 @@ export function DepartmentDetailPanel({ dept, allDepts, employees, onClose }: Pr
         )}
 
         {/* Statistics */}
-        {deptStatDefs.length > 0 && (
-          <section>
-            <div className="flex items-center justify-between mb-3">
-              <p className="text-[10px] font-display font-bold text-muted-foreground uppercase tracking-widest">
-                📊 Статистики департамента
-              </p>
+        <section>
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-[10px] font-display font-bold text-muted-foreground uppercase tracking-widest">
+              📊 Статистики департамента ({deptStatDefs.length})
+            </p>
+            <div className="flex items-center gap-2">
+              {isAdmin && (
+                <button
+                  onClick={() => { setEditingStat(null); setShowStatModal(true); }}
+                  className="text-[10px] text-primary font-display font-bold flex items-center gap-1 hover:underline"
+                >
+                  <Plus size={10} /> Добавить
+                </button>
+              )}
               <select
                 value={statPeriod}
                 onChange={e => setStatPeriod(e.target.value)}
@@ -287,6 +181,8 @@ export function DepartmentDetailPanel({ dept, allDepts, employees, onClose }: Pr
                 <option value="12">12 Нед.</option>
               </select>
             </div>
+          </div>
+          {deptStatDefs.length > 0 ? (
             <div className="space-y-3">
               {deptStatDefs.map(def => {
                 const chartData = getStatChartData(def.id);
@@ -294,18 +190,27 @@ export function DepartmentDetailPanel({ dept, allDepts, employees, onClose }: Pr
                 const trend = getTrend(def.id);
                 const isExpanded = expandedStatId === def.id;
                 return (
-                  <div key={def.id} className="bg-muted/50 border border-border rounded-xl p-4">
+                  <div key={def.id} className="bg-muted/50 border border-border rounded-xl p-4 group/stat">
                     <div className="flex items-start justify-between mb-1">
                       <p className="text-xs font-display font-bold text-foreground uppercase flex-1">{def.title}</p>
-                      {def.purpose && (
-                        <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-display font-bold ml-2 flex-shrink-0">
-                          {def.purpose}
-                        </span>
-                      )}
+                      <div className="flex items-center gap-1">
+                        {isAdmin && (
+                          <button
+                            onClick={() => { setEditingStat(def); setShowStatModal(true); }}
+                            className="opacity-0 group-hover/stat:opacity-100 transition-opacity"
+                          >
+                            <Pencil size={10} className="text-muted-foreground hover:text-primary" />
+                          </button>
+                        )}
+                        {def.purpose && (
+                          <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-display font-bold ml-1 flex-shrink-0">
+                            {def.purpose}
+                          </span>
+                        )}
+                      </div>
                     </div>
                     <p className="text-[10px] font-body text-muted-foreground mb-2">{def.description ?? ''}</p>
 
-                    {/* Expandable details */}
                     <button
                       onClick={() => setExpandedStatId(isExpanded ? null : def.id)}
                       className="flex items-center gap-1 text-[10px] text-primary font-display font-bold mb-2 hover:underline"
@@ -355,11 +260,13 @@ export function DepartmentDetailPanel({ dept, allDepts, employees, onClose }: Pr
                 );
               })}
             </div>
-          </section>
-        )}
+          ) : (
+            <div className="text-center py-4 text-muted-foreground/50 text-xs">Статистики не заданы</div>
+          )}
+        </section>
 
-        {/* Diagnostics */}
-        {diagnostics && (
+        {/* Diagnostics from DB */}
+        {hasDiagnostics && (
           <section>
             <button
               onClick={() => setShowDiagnostics(!showDiagnostics)}
@@ -370,32 +277,36 @@ export function DepartmentDetailPanel({ dept, allDepts, employees, onClose }: Pr
             </button>
             {showDiagnostics && (
               <div className="grid grid-cols-1 gap-3">
-                <div className="bg-destructive/5 border border-destructive/20 rounded-xl p-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <AlertTriangle size={14} className="text-destructive" />
-                    <p className="text-xs font-display font-bold text-destructive">Признаки проблем</p>
+                {problems.length > 0 && (
+                  <div className="bg-destructive/5 border border-destructive/20 rounded-xl p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <AlertTriangle size={14} className="text-destructive" />
+                      <p className="text-xs font-display font-bold text-destructive">Признаки проблем</p>
+                    </div>
+                    <ul className="space-y-1">
+                      {problems.map((p) => (
+                        <li key={p.id} className="text-xs font-body text-muted-foreground flex items-start gap-2">
+                          <span className="text-destructive mt-0.5">•</span> {p.text}
+                        </li>
+                      ))}
+                    </ul>
                   </div>
-                  <ul className="space-y-1">
-                    {diagnostics.problems.map((p, i) => (
-                      <li key={i} className="text-xs font-body text-muted-foreground flex items-start gap-2">
-                        <span className="text-destructive mt-0.5">•</span> {p}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-                <div className="bg-green-500/5 border border-green-500/20 rounded-xl p-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Rocket size={14} className="text-green-500" />
-                    <p className="text-xs font-display font-bold text-green-500">Первоочередные действия</p>
+                )}
+                {actions.length > 0 && (
+                  <div className="bg-green-500/5 border border-green-500/20 rounded-xl p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Rocket size={14} className="text-green-500" />
+                      <p className="text-xs font-display font-bold text-green-500">Первоочередные действия</p>
+                    </div>
+                    <ul className="space-y-1">
+                      {actions.map((a) => (
+                        <li key={a.id} className="text-xs font-body text-muted-foreground flex items-start gap-2">
+                          <span className="text-green-500 mt-0.5">•</span> {a.text}
+                        </li>
+                      ))}
+                    </ul>
                   </div>
-                  <ul className="space-y-1">
-                    {diagnostics.actions.map((a, i) => (
-                      <li key={i} className="text-xs font-body text-muted-foreground flex items-start gap-2">
-                        <span className="text-green-500 mt-0.5">•</span> {a}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+                )}
               </div>
             )}
           </section>
@@ -422,7 +333,7 @@ export function DepartmentDetailPanel({ dept, allDepts, employees, onClose }: Pr
           </div>
         </section>
 
-        {/* Subdivisions with details */}
+        {/* Subdivisions */}
         {children.length > 0 && (
           <section>
             <p className="text-[10px] font-display font-bold text-muted-foreground uppercase tracking-widest mb-3">
@@ -432,12 +343,22 @@ export function DepartmentDetailPanel({ dept, allDepts, employees, onClose }: Pr
               {children.map(child => {
                 const childEmps = employees.filter(e => (e.department_ids ?? []).includes(child.id));
                 return (
-                  <div key={child.id} className="bg-muted/30 border border-border rounded-xl overflow-hidden">
+                  <div key={child.id} className="bg-muted/30 border border-border rounded-xl overflow-hidden group/child">
                     <div className="h-1" style={{ backgroundColor: child.color ?? dept.color ?? 'hsl(var(--primary))' }} />
                     <div className="p-4">
                       <div className="flex items-center justify-between mb-1">
                         <p className="text-xs font-display font-bold text-foreground">{child.name}</p>
-                        <span className="text-xs text-muted-foreground font-display">{childEmps.length}</span>
+                        <div className="flex items-center gap-2">
+                          {isAdmin && onEditDept && (
+                            <button
+                              onClick={() => onEditDept(child)}
+                              className="opacity-0 group-hover/child:opacity-100 transition-opacity"
+                            >
+                              <Pencil size={10} className="text-muted-foreground hover:text-primary" />
+                            </button>
+                          )}
+                          <span className="text-xs text-muted-foreground font-display">{childEmps.length}</span>
+                        </div>
                       </div>
                       <p className="text-[10px] font-body text-muted-foreground mb-2">
                         {child.description ?? ''}
@@ -460,6 +381,14 @@ export function DepartmentDetailPanel({ dept, allDepts, employees, onClose }: Pr
                 );
               })}
             </div>
+            {isAdmin && onAddChild && (
+              <button
+                onClick={() => onAddChild(dept)}
+                className="mt-3 w-full py-2 border border-dashed border-border rounded-xl text-xs text-muted-foreground font-display hover:border-primary hover:text-primary flex items-center justify-center gap-1 transition-colors"
+              >
+                <Plus size={12} /> Добавить отдел
+              </button>
+            )}
           </section>
         )}
 
@@ -509,6 +438,14 @@ export function DepartmentDetailPanel({ dept, allDepts, employees, onClose }: Pr
           )}
         </section>
       </div>
+
+      {/* Stat edit modal */}
+      <StatDefinitionEditModal
+        open={showStatModal}
+        onClose={() => { setShowStatModal(false); setEditingStat(null); }}
+        stat={editingStat}
+        ownerId={dept.id}
+      />
     </div>
   );
 }
