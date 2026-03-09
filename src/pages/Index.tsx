@@ -1,4 +1,5 @@
 import { useNavigation } from '@/hooks/useNavigation';
+import { useAuth } from '@/hooks/useAuth';
 import { AppSidebar } from '@/components/AppSidebar';
 import { AppHeader } from '@/components/AppHeader';
 import { MobileBottomNav } from '@/components/MobileBottomNav';
@@ -8,24 +9,32 @@ import { EmployeesPage } from '@/pages/Employees';
 import { AcademyPage } from '@/pages/Academy';
 import { StatisticsPage } from '@/pages/Statistics';
 import { SettingsPage } from '@/pages/SettingsPage';
+import { AuthPage } from '@/pages/AuthPage';
+import { Loader2 } from 'lucide-react';
 
 const Index = () => {
-  const isAdmin = true; // Will be replaced with auth logic
+  const { session, user, loading, isAdmin, signOut } = useAuth();
   const employeeCount = 0;
-
   const nav = useNavigation();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="animate-spin text-primary" size={40} />
+      </div>
+    );
+  }
+
+  if (!session) {
+    return <AuthPage onAuthSuccess={() => {}} />;
+  }
 
   return (
     <div className="min-h-screen flex bg-background relative">
-      {/* Mobile overlay */}
       {nav.isMobileMenuOpen && (
-        <div
-          className="fixed inset-0 bg-background/60 z-30 md:hidden"
-          onClick={nav.closeMobileMenu}
-        />
+        <div className="fixed inset-0 bg-background/60 z-30 md:hidden" onClick={nav.closeMobileMenu} />
       )}
 
-      {/* Sidebar */}
       <AppSidebar
         currentView={nav.currentView}
         selectedDept={nav.selectedDept}
@@ -37,13 +46,13 @@ const Index = () => {
         onStatisticsView={nav.handleStatisticsView}
         onToggleSidebar={nav.toggleSidebar}
         onCloseMobileMenu={nav.closeMobileMenu}
-        onLogout={() => {}}
+        onLogout={signOut}
       />
 
-      {/* Main content */}
       <main className="flex-1 flex flex-col min-w-0 pb-20 md:pb-0">
         <AppHeader
           isAdmin={isAdmin}
+          userEmail={user?.email}
           onToggleMobileMenu={nav.toggleMobileMenu}
           onAddEmployee={() => {}}
           onStatisticsView={() => nav.handleStatisticsView(null)}
@@ -72,7 +81,6 @@ const Index = () => {
         </div>
       </main>
 
-      {/* Mobile navigation */}
       <MobileBottomNav
         currentView={nav.currentView}
         onViewChange={nav.handleViewChange}
