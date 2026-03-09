@@ -77,6 +77,7 @@ const Index = () => {
             <StatisticsPage selectedDeptId={nav.selectedDept} />
           )}
           {nav.currentView === 'settings' && isAdmin && <SettingsPage />}
+          {nav.currentView === 'admin_scale' && <AdminScalePage />}
         </div>
       </main>
 
