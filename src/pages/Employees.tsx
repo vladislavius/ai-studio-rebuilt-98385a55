@@ -1,6 +1,10 @@
-import { Users, Plus, UserPlus, Cake, UserCheck, FileText, BarChart3, Filter } from 'lucide-react';
+import { useState } from 'react';
+import { Plus, UserPlus } from 'lucide-react';
 import { EmployeeSubView, DocumentsSubView, ListSubView } from '@/types';
 import { EMPLOYEE_TABS, DOCUMENTS_TABS, LIST_TABS } from '@/constants/navigation';
+import { EmployeeList } from '@/components/employees/EmployeeList';
+import { EmployeeForm } from '@/components/employees/EmployeeForm';
+import { BirthdayList } from '@/components/employees/BirthdayList';
 
 interface EmployeesPageProps {
   employeeSubView: EmployeeSubView;
@@ -19,8 +23,17 @@ export function EmployeesPage({
   documentsSubView,
   setDocumentsSubView,
 }: EmployeesPageProps) {
+  const [showForm, setShowForm] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
+
+  const openCreate = () => { setEditId(null); setShowForm(true); };
+  const openEdit = (id: string) => { setEditId(id); setShowForm(true); };
+  const closeForm = () => { setShowForm(false); setEditId(null); };
+
   return (
     <div className="space-y-4">
+      {showForm && <EmployeeForm employeeId={editId} onClose={closeForm} />}
+
       {/* Tab bar */}
       <div className="bg-card p-4 md:p-5 rounded-xl border border-border space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -42,11 +55,12 @@ export function EmployeesPage({
           </div>
 
           {employeeSubView === 'list' && (
-            <div className="flex items-center gap-3">
-              <button className="px-4 py-2 bg-primary text-primary-foreground font-display font-bold rounded-xl hover:bg-primary/90 transition-all flex items-center gap-2 text-sm">
-                {listSubView === 'employees' ? <><Plus size={16} /> <span className="hidden sm:inline">Сотрудник</span></> : <><UserPlus size={16} /> <span className="hidden sm:inline">Кандидат</span></>}
-              </button>
-            </div>
+            <button
+              onClick={openCreate}
+              className="px-4 py-2 bg-primary text-primary-foreground font-display font-bold rounded-xl hover:bg-primary/90 transition-all flex items-center gap-2 text-sm"
+            >
+              {listSubView === 'employees' ? <><Plus size={16} /> <span className="hidden sm:inline">Сотрудник</span></> : <><UserPlus size={16} /> <span className="hidden sm:inline">Кандидат</span></>}
+            </button>
           )}
         </div>
 
@@ -92,18 +106,23 @@ export function EmployeesPage({
       </div>
 
       {/* Content area */}
-      <div className="bg-card border border-border rounded-xl p-8 text-center min-h-[300px] flex items-center justify-center">
-        <div>
-          <p className="text-muted-foreground font-body text-sm mb-2">
-            {employeeSubView === 'list' && listSubView === 'employees' && 'Список сотрудников будет отображаться после подключения БД'}
-            {employeeSubView === 'list' && listSubView === 'candidates' && 'Список кандидатов будет отображаться после подключения БД'}
-            {employeeSubView === 'reports' && 'Отчёты будут отображаться после подключения БД'}
-            {employeeSubView === 'birthdays' && 'Дни рождения будут отображаться после подключения БД'}
-            {employeeSubView === 'onboarding' && 'Планы онбординга будут отображаться после подключения БД'}
-            {employeeSubView === 'documents' && 'Документы будут отображаться после подключения БД'}
-          </p>
-          <p className="text-xs text-muted-foreground/60 font-body">Подключите Lovable Cloud для работы с данными</p>
-        </div>
+      <div className="bg-card border border-border rounded-xl p-5">
+        {employeeSubView === 'list' && listSubView === 'employees' && (
+          <EmployeeList onEdit={openEdit} />
+        )}
+        {employeeSubView === 'list' && listSubView === 'candidates' && (
+          <div className="text-center py-12 text-muted-foreground font-body text-sm">Раздел кандидатов — в разработке</div>
+        )}
+        {employeeSubView === 'birthdays' && <BirthdayList />}
+        {employeeSubView === 'reports' && (
+          <div className="text-center py-12 text-muted-foreground font-body text-sm">Раздел отчётов — в разработке</div>
+        )}
+        {employeeSubView === 'onboarding' && (
+          <div className="text-center py-12 text-muted-foreground font-body text-sm">Раздел онбординга — в разработке</div>
+        )}
+        {employeeSubView === 'documents' && (
+          <div className="text-center py-12 text-muted-foreground font-body text-sm">Раздел документов — в разработке</div>
+        )}
       </div>
     </div>
   );

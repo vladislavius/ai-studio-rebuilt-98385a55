@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { ChevronLeft, ChevronRight, ChevronDown, X, LogOut } from 'lucide-react';
 import { MAIN_NAV, STATS_NAV, SETTINGS_NAV } from '@/constants/navigation';
-import { ORGANIZATION_STRUCTURE, DEPT_SORT_ORDER } from '@/constants';
+import { useDepartments } from '@/hooks/useDepartments';
+import { useEmployees } from '@/hooks/useEmployees';
 import { ViewMode } from '@/types';
 
 interface AppSidebarProps {
@@ -10,7 +11,6 @@ interface AppSidebarProps {
   isSidebarCollapsed: boolean;
   isMobileMenuOpen: boolean;
   isAdmin: boolean;
-  employeeCount: number;
   onViewChange: (view: ViewMode) => void;
   onStatisticsView: (deptId: string | null) => void;
   onToggleSidebar: () => void;
@@ -24,13 +24,14 @@ export function AppSidebar({
   isSidebarCollapsed,
   isMobileMenuOpen,
   isAdmin,
-  employeeCount,
   onViewChange,
   onStatisticsView,
   onToggleSidebar,
   onCloseMobileMenu,
   onLogout,
 }: AppSidebarProps) {
+  const { data: employees } = useEmployees();
+  const employeeCount = employees?.length ?? 0;
   const sidebarWidth = isSidebarCollapsed ? 'w-20' : 'w-72';
   const sidebarMobileClasses = isMobileMenuOpen ? '' : '-translate-x-full md:translate-x-0';
 
@@ -142,19 +143,9 @@ export function AppSidebar({
 }
 
 function SidebarButton({
-  icon,
-  label,
-  isActive,
-  isCollapsed,
-  onClick,
-  variant,
+  icon, label, isActive, isCollapsed, onClick, variant,
 }: {
-  icon: React.ReactNode;
-  label: string;
-  isActive: boolean;
-  isCollapsed: boolean;
-  onClick: () => void;
-  variant?: 'highlight';
+  icon: React.ReactNode; label: string; isActive: boolean; isCollapsed: boolean; onClick: () => void; variant?: 'highlight';
 }) {
   const activeClass = variant === 'highlight' && isActive
     ? 'bg-primary text-primary-foreground font-semibold'
@@ -175,17 +166,12 @@ function SidebarButton({
 }
 
 function DepartmentsList({
-  isCollapsed,
-  currentView,
-  selectedDept,
-  onSelectDept,
+  isCollapsed, currentView, selectedDept, onSelectDept,
 }: {
-  isCollapsed: boolean;
-  currentView: ViewMode;
-  selectedDept: string | null;
-  onSelectDept: (deptId: string) => void;
+  isCollapsed: boolean; currentView: ViewMode; selectedDept: string | null; onSelectDept: (deptId: string) => void;
 }) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const { data: departments } = useDepartments();
 
   if (isCollapsed) return null;
 
@@ -202,19 +188,17 @@ function DepartmentsList({
       </button>
       {isExpanded && (
         <div className="mt-1 space-y-0.5">
-          {DEPT_SORT_ORDER.map(deptId => {
-            const dept = ORGANIZATION_STRUCTURE[deptId];
-            if (!dept) return null;
-            const isActive = currentView === 'statistics' && selectedDept === deptId;
+          {(departments ?? []).map(dept => {
+            const isActive = currentView === 'statistics' && selectedDept === dept.id;
             return (
               <button
-                key={deptId}
-                onClick={() => onSelectDept(deptId)}
+                key={dept.id}
+                onClick={() => onSelectDept(dept.id)}
                 className={`w-full flex items-center gap-2.5 px-3 md:px-4 py-1.5 rounded-lg transition-all ${
                   isActive ? 'bg-accent text-primary font-semibold' : 'text-muted-foreground hover:bg-accent font-medium'
                 }`}
               >
-                <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: dept.color }} />
+                <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: dept.color ?? '#4C5CFF' }} />
                 <span className="truncate text-xs font-display">{dept.name}</span>
               </button>
             );
