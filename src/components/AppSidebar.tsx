@@ -104,6 +104,24 @@ export function AppSidebar({
           />
         </div>
 
+        <div className="mt-4 md:mt-6 border-t border-sidebar-border pt-3 md:pt-4">
+          {!isSidebarCollapsed && (
+            <p className="px-3 md:px-4 text-xs font-display font-semibold text-muted-foreground uppercase tracking-wider mb-2 md:mb-3">
+              Инструменты
+            </p>
+          )}
+          {TOOLS_NAV.map(item => (
+            <SidebarButton
+              key={item.id}
+              icon={<item.icon size={18} />}
+              label={item.label}
+              isActive={currentView === item.id}
+              isCollapsed={isSidebarCollapsed}
+              onClick={() => onViewChange(item.id)}
+            />
+          ))}
+        </div>
+
         {isAdmin && (
           <div className="mt-4 md:mt-6 border-t border-sidebar-border pt-3 md:pt-4">
             {!isSidebarCollapsed && (
