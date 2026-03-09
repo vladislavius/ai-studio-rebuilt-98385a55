@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useEmployees, useDeleteEmployee } from '@/hooks/useEmployees';
 import { useDepartments } from '@/hooks/useDepartments';
-import { Search, Trash2, Edit, Phone, Mail, Filter } from 'lucide-react';
+import { Search, Trash2, Phone, Mail, MessageCircle, ChevronDown } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 
 interface EmployeeListProps {
@@ -45,72 +45,117 @@ export function EmployeeList({ onEdit }: EmployeeListProps) {
           onChange={e => setFilterDept(e.target.value)}
           className="px-3 py-2 bg-accent border border-border rounded-lg text-sm font-body text-foreground"
         >
-          <option value="all">Все отделы</option>
-          {departments?.map(d => (
+          <option value="all">ВСЕ ДЕПАРТАМЕНТЫ</option>
+          {departments?.filter(d => !d.parent_id).map(d => (
             <option key={d.id} value={d.id}>{d.name}</option>
           ))}
         </select>
       </div>
 
       {/* Count */}
-      <p className="text-xs text-muted-foreground font-display font-medium">
-        Найдено: {filtered.length}
-      </p>
+      <div className="flex items-center justify-between">
+        <p className="text-xs text-muted-foreground font-display font-medium uppercase tracking-wider">
+          Всего: {filtered.length}
+        </p>
+      </div>
 
-      {/* List */}
+      {/* Card Grid */}
       {filtered.length === 0 ? (
         <div className="text-center py-12 text-muted-foreground font-body text-sm">
           {employees?.length === 0 ? 'Нет сотрудников. Добавьте первого!' : 'Ничего не найдено'}
         </div>
       ) : (
-        <div className="space-y-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {filtered.map(emp => {
             const empDepts = (emp.department_ids ?? []).map(id => deptMap.get(id)).filter(Boolean);
+            const empSubDepts = (emp.subdepartment_ids ?? []).map(id => deptMap.get(id)).filter(Boolean);
+            const initials = emp.full_name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+            const mainDept = empDepts[0];
+            const mainSubDept = empSubDepts[0];
+
             return (
               <div
                 key={emp.id}
-                className="bg-card border border-border rounded-xl p-4 hover:border-primary/20 transition-colors group cursor-pointer"
+                className="bg-card border border-border rounded-xl overflow-hidden hover:border-primary/30 transition-all cursor-pointer group relative"
                 onClick={() => onEdit(emp.id)}
               >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-10 h-10 rounded-full bg-accent flex items-center justify-center flex-shrink-0">
-                      <span className="text-sm font-display font-bold text-foreground">
-                        {emp.full_name.split(' ').map(w => w[0]).join('').slice(0, 2)}
-                      </span>
-                    </div>
-                    <div className="min-w-0">
-                      <p className="font-display font-semibold text-foreground text-sm truncate">{emp.full_name}</p>
-                      <p className="text-xs text-muted-foreground font-body truncate">{emp.position}</p>
-                      {empDepts.length > 0 && (
-                        <div className="flex gap-1 mt-1 flex-wrap">
-                          {empDepts.map(d => (
-                            <span key={d!.id} className="text-[10px] px-1.5 py-0.5 rounded font-display font-medium" style={{ backgroundColor: `${d!.color}20`, color: d!.color ?? undefined }}>
-                              {d!.name}
-                            </span>
-                          ))}
+                {/* Color bar top */}
+                <div className="h-1.5 w-full" style={{ backgroundColor: mainDept?.color ?? 'hsl(var(--muted))' }} />
+
+                {/* Delete button */}
+                <button
+                  onClick={e => {
+                    e.stopPropagation();
+                    if (confirm('Удалить сотрудника?')) deleteMut.mutate(emp.id);
+                  }}
+                  className="absolute top-3 right-3 p-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive/10 text-muted-foreground hover:text-destructive z-10"
+                >
+                  <Trash2 size={14} />
+                </button>
+
+                <div className="p-4 space-y-3">
+                  {/* Avatar + Badge */}
+                  <div className="flex items-start gap-3">
+                    <div className="relative flex-shrink-0">
+                      {emp.photo_url ? (
+                        <img src={emp.photo_url} alt={emp.full_name} className="w-14 h-14 rounded-full object-cover border-2 border-border" />
+                      ) : (
+                        <div className="w-14 h-14 rounded-full bg-accent flex items-center justify-center border-2 border-border">
+                          <span className="text-base font-display font-bold text-foreground">{initials}</span>
                         </div>
                       )}
+                      {mainDept && (
+                        <span
+                          className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-primary-foreground border-2 border-card"
+                          style={{ backgroundColor: mainDept.color ?? 'hsl(var(--muted))' }}
+                        >
+                          {mainDept.code?.replace(/[^\d]/g, '') || mainDept.name[0]}
+                        </span>
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="font-display font-bold text-sm text-foreground leading-tight truncate">{emp.full_name}</h3>
+                      <p className="text-xs font-display font-medium mt-0.5 truncate" style={{ color: mainDept?.color ?? 'hsl(var(--muted-foreground))' }}>
+                        {emp.position}
+                      </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    {emp.phone && <Phone size={14} className="text-muted-foreground" />}
-                    {emp.email && <Mail size={14} className="text-muted-foreground" />}
-                    <button
-                      onClick={e => { e.stopPropagation(); onEdit(emp.id); }}
-                      className="p-1.5 rounded-lg hover:bg-accent text-muted-foreground hover:text-foreground"
-                    >
-                      <Edit size={14} />
-                    </button>
-                    <button
-                      onClick={e => {
-                        e.stopPropagation();
-                        if (confirm('Удалить сотрудника?')) deleteMut.mutate(emp.id);
-                      }}
-                      className="p-1.5 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive"
-                    >
-                      <Trash2 size={14} />
-                    </button>
+
+                  {/* Nickname + Dept info */}
+                  <div className="space-y-1 text-xs text-muted-foreground font-body">
+                    {emp.nickname && (
+                      <p className="flex items-center gap-1.5">
+                        <span className="text-foreground/60">◆</span>
+                        <span>{emp.nickname}</span>
+                      </p>
+                    )}
+                    {mainSubDept && (
+                      <p className="truncate">
+                        {mainSubDept.name}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Contacts */}
+                  <div className="space-y-1.5 pt-1 border-t border-border">
+                    {emp.phone && (
+                      <p className="flex items-center gap-2 text-xs text-muted-foreground font-body">
+                        <Phone size={12} className="flex-shrink-0" />
+                        <span className="truncate">{emp.phone}</span>
+                      </p>
+                    )}
+                    {emp.email && (
+                      <p className="flex items-center gap-2 text-xs text-muted-foreground font-body">
+                        <Mail size={12} className="flex-shrink-0" />
+                        <span className="truncate">{emp.email}</span>
+                      </p>
+                    )}
+                    {emp.telegram_username && (
+                      <p className="flex items-center gap-2 text-xs font-body" style={{ color: mainDept?.color ?? 'hsl(var(--primary))' }}>
+                        <MessageCircle size={12} className="flex-shrink-0" />
+                        <span className="truncate">@{emp.telegram_username.replace('@', '')}</span>
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
