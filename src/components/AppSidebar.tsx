@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { ChevronLeft, ChevronRight, ChevronDown, X, LogOut } from 'lucide-react';
-import { MAIN_NAV, STATS_NAV, SETTINGS_NAV } from '@/constants/navigation';
+import { MAIN_NAV, STATS_NAV, SETTINGS_NAV, TOOLS_NAV } from '@/constants/navigation';
 import { useDepartments } from '@/hooks/useDepartments';
 import { useEmployees } from '@/hooks/useEmployees';
 import { ViewMode } from '@/types';
