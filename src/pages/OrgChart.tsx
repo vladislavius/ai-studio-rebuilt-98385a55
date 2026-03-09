@@ -69,8 +69,8 @@ export function OrgChartPage() {
           className="bg-[#FFD700] border-2 border-[#DAA520] rounded-xl px-10 py-4 text-center relative shadow-lg group cursor-pointer"
           onClick={() => isAdmin && setShowCompanySettings(true)}
         >
-          <p className="text-sm font-display font-bold text-foreground">{s.founder_title ?? 'Основатель'}</p>
-          <p className="text-xs font-body text-foreground/70">{s.founder_subtitle ?? 'Стратегическое руководство'}</p>
+          <p className="text-sm font-display font-bold text-gray-900">{s.founder_title ?? 'Основатель'}</p>
+          <p className="text-xs font-body text-gray-700">{s.founder_subtitle ?? 'Стратегическое руководство'}</p>
           {isAdmin && (
             <span className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
               <Pencil size={12} className="text-foreground/50" />
