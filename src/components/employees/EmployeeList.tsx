@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { useEmployees, useDeleteEmployee } from '@/hooks/useEmployees';
 import { useDepartments } from '@/hooks/useDepartments';
-import { Search, Trash2, Phone, Mail, MessageCircle, ChevronDown } from 'lucide-react';
+import { Search, Trash2, Phone, Mail, MessageCircle } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { CyberneticCard } from '@/components/ui/cybernetic-card';
 import { Input } from '@/components/ui/input';
 
 interface EmployeeListProps {
