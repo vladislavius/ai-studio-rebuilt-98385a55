@@ -4,6 +4,7 @@ import { useEmployees } from '@/hooks/useEmployees';
 import { useCompanySettings } from '@/hooks/useOrgChartMutations';
 import { useAuth } from '@/hooks/useAuth';
 import { Users, Plus, Settings, Pencil } from 'lucide-react';
+import { CyberneticCard } from '@/components/ui/cybernetic-card';
 import { DepartmentDetailPanel } from '@/components/orgchart/DepartmentDetailPanel';
 import { DepartmentEditModal } from '@/components/orgchart/DepartmentEditModal';
 import { CreateDepartmentModal } from '@/components/orgchart/CreateDepartmentModal';
@@ -193,10 +194,9 @@ function DepartmentColumn({
   isSelected: boolean;
 }) {
   return (
-    <div
-      className={`rounded-xl border transition-all cursor-pointer group ${
-        isSelected ? 'border-primary shadow-lg shadow-primary/10' : 'border-border hover:border-primary/30'
-      } bg-card overflow-hidden`}
+    <CyberneticCard
+      glowColor={dept.color ?? 'hsl(var(--primary))'}
+      className={isSelected ? 'border-primary shadow-lg shadow-primary/10' : ''}
       onClick={() => onSelect(dept.id)}
     >
       <div className="h-1" style={{ backgroundColor: dept.color ?? '#4C5CFF' }} />
@@ -279,6 +279,6 @@ function DepartmentColumn({
           </button>
         )}
       </div>
-    </div>
+    </CyberneticCard>
   );
 }
