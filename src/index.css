@@ -110,3 +110,14 @@
 ::-webkit-scrollbar-thumb:hover {
   background: hsl(0 0% 30%);
 }
+
+/* Cybernetic card glow */
+.cybernetic-card {
+  --glow-opacity: 0;
+  --border-glow-opacity: 0;
+}
+.cybernetic-card:hover {
+  --glow-opacity: 0.35;
+  --border-glow-opacity: 0.5;
+  border-color: transparent;
+}

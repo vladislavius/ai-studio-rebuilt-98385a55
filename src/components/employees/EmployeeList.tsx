@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useEmployees, useDeleteEmployee } from '@/hooks/useEmployees';
 import { useDepartments } from '@/hooks/useDepartments';
-import { Search, Trash2, Phone, Mail, MessageCircle, ChevronDown } from 'lucide-react';
+import { Search, Trash2, Phone, Mail, MessageCircle } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { CyberneticCard } from '@/components/ui/cybernetic-card';
 
 interface EmployeeListProps {
   onEdit: (id: string) => void;
@@ -74,9 +75,9 @@ export function EmployeeList({ onEdit }: EmployeeListProps) {
             const mainSubDept = empSubDepts[0];
 
             return (
-              <div
+              <CyberneticCard
                 key={emp.id}
-                className="bg-card border border-border rounded-xl overflow-hidden hover:border-primary/30 transition-all cursor-pointer group relative"
+                glowColor={mainDept?.color ?? 'hsl(var(--primary))'}
                 onClick={() => onEdit(emp.id)}
               >
                 {/* Color bar top */}
@@ -158,7 +159,7 @@ export function EmployeeList({ onEdit }: EmployeeListProps) {
                     )}
                   </div>
                 </div>
-              </div>
+              </CyberneticCard>
             );
           })}
         </div>
