@@ -189,9 +189,12 @@ function DashboardView({ scales, onOpen, onDelete, onNewScale, onLoadTemplate }:
   onLoadTemplate: (builder: () => AdminScale) => void;
 }) {
   const templateCards = [
-    { icon: '✦', title: 'Новая шкала', desc: 'Создайте административную шкалу — от Цели до ЦКП.', color: 'hsl(var(--primary))', onClick: onNewScale },
-    { icon: '🌹', title: 'Вечер с женой', desc: 'Классический пример: кино, ресторан, прогулка.', color: 'hsl(145, 60%, 40%)', onClick: () => onLoadTemplate(buildWifeTemplate) },
-    { icon: '📈', title: 'Маркетинговое агентство', desc: 'Увеличить клиентов на 50% через соцсети.', color: 'hsl(30, 80%, 50%)', onClick: () => onLoadTemplate(buildMarketingTemplate) },
+    { icon: '✦', title: 'Новая шкала', desc: 'Создайте административную шкалу — от Цели до ЦКП, с программами и задачами по всем правилам.', color: 'hsl(var(--primary))', onClick: onNewScale },
+    { icon: '📖', title: 'Справочник', desc: 'Полное руководство: структура программ, 5 типов задач, правила проектов. Всё из первоисточника.', color: 'hsl(210, 60%, 50%)', onClick: onOpenRef },
+    { icon: '🏢', title: 'Пример: Экскурсии', desc: 'Загрузить готовую программу «Проведение экскурсий по компании» — реальный пример из ПДФ.', color: 'hsl(270, 50%, 50%)', onClick: () => onLoadTemplate(buildExcursionsTemplate) },
+    { icon: '🌹', title: 'Пример: Вечер с женой', desc: 'Классический пример из книги: кино, ресторан, прогулка — программа и проект в действии.', color: 'hsl(145, 60%, 40%)', onClick: () => onLoadTemplate(buildWifeTemplate) },
+    { icon: '📈', title: 'Пример: Маркетинговое агентство', desc: 'Полная шкала агентства: увеличить клиентов на 50% через соцсети. Программа + проект + приказы.', color: 'hsl(30, 80%, 50%)', onClick: () => onLoadTemplate(buildMarketingTemplate) },
+    { icon: '👥', title: 'Пример: ТИПы сотрудников', desc: 'Программа по составлению технических индивидуальных программ для сотрудников.', color: 'hsl(170, 60%, 40%)', onClick: () => onLoadTemplate(buildTIPTemplate) },
   ];
 
   return (
