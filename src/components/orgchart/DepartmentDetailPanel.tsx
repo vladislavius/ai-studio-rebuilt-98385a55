@@ -27,8 +27,23 @@ type Tab = 'info' | 'functions' | 'employees';
 export function DepartmentDetailPanel({ dept, allDepts, employees, onClose }: Props) {
   const [search, setSearch] = useState('');
   const [statPeriod, setStatPeriod] = useState('3');
-  const { data: statDefs } = useStatisticDefinitions();
-  const { data: statValues } = useStatisticValues();
+  const { data: statDefs } = useStatisticDefinitions('department', dept.id);
+  const { data: allStatValues } = useQuery({
+    queryKey: ['all-stat-values-dept', dept.id],
+    queryFn: async () => {
+      const defIds = (statDefs ?? []).map(d => d.id);
+      if (defIds.length === 0) return [];
+      const { data, error } = await supabase
+        .from('statistic_values')
+        .select('*')
+        .in('definition_id', defIds)
+        .order('date');
+      if (error) throw error;
+      return data;
+    },
+    enabled: (statDefs ?? []).length > 0,
+  });
+  const statValues = allStatValues ?? [];
 
   const deptEmployees = employees.filter(e => (e.department_ids ?? []).includes(dept.id));
   const filteredEmployees = deptEmployees.filter(e =>
