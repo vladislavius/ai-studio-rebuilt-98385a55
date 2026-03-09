@@ -280,4 +280,5 @@ function DepartmentColumn({
         )}
       </div>
     </CyberneticCard>
+  );
 }
