@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { motion } from 'framer-motion';
 import { ChevronLeft, ChevronRight, ChevronDown, X, LogOut } from 'lucide-react';
 import { MAIN_NAV, STATS_NAV, SETTINGS_NAV } from '@/constants/navigation';
 import { useDepartments } from '@/hooks/useDepartments';
@@ -156,9 +157,19 @@ function SidebarButton({
   return (
     <button
       onClick={onClick}
-      className={`w-full flex items-center gap-2.5 px-3 md:px-4 py-2.5 md:py-3 rounded-xl transition-all font-display text-sm ${activeClass}`}
+      className={`relative w-full flex items-center gap-2.5 px-3 md:px-4 py-2.5 md:py-3 rounded-xl transition-all font-display text-sm ${activeClass}`}
       title={isCollapsed ? label : undefined}
     >
+      {isActive && (
+        <motion.div
+          layoutId="sidebar-tubelight"
+          className="absolute left-0 top-1/2 -translate-y-1/2 flex flex-col items-center pointer-events-none"
+          transition={{ type: 'spring', bounce: 0.2, duration: 0.5 }}
+        >
+          <div className="w-[2px] h-6 bg-primary rounded-full" />
+          <div className="absolute w-3 h-8 bg-primary/20 blur-md rounded-full" />
+        </motion.div>
+      )}
       <div className="flex-shrink-0">{icon}</div>
       {!isCollapsed && <span className="whitespace-nowrap">{label}</span>}
     </button>
