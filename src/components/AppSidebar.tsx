@@ -1,4 +1,5 @@
-import { ChevronLeft, ChevronRight, ChevronDown, X, LogOut, Users } from 'lucide-react';
+import { useState } from 'react';
+import { ChevronLeft, ChevronRight, ChevronDown, X, LogOut } from 'lucide-react';
 import { MAIN_NAV, STATS_NAV, SETTINGS_NAV } from '@/constants/navigation';
 import { ORGANIZATION_STRUCTURE, DEPT_SORT_ORDER } from '@/constants';
 import { ViewMode } from '@/types';
@@ -79,7 +80,6 @@ export function AppSidebar({
           ))}
         </div>
 
-        {/* Statistics */}
         <div>
           {!isSidebarCollapsed && (
             <p className="px-3 md:px-4 text-xs font-display font-semibold text-muted-foreground uppercase tracking-wider mb-2 md:mb-3">
@@ -102,7 +102,6 @@ export function AppSidebar({
           />
         </div>
 
-        {/* Settings */}
         {isAdmin && (
           <div className="mt-4 md:mt-6 border-t border-sidebar-border pt-3 md:pt-4">
             {!isSidebarCollapsed && (
@@ -142,7 +141,6 @@ export function AppSidebar({
   );
 }
 
-// Sidebar button component
 function SidebarButton({
   icon,
   label,
@@ -176,7 +174,6 @@ function SidebarButton({
   );
 }
 
-// Departments list in sidebar
 function DepartmentsList({
   isCollapsed,
   currentView,
@@ -227,5 +224,3 @@ function DepartmentsList({
     </>
   );
 }
-
-import { useState } from 'react';
