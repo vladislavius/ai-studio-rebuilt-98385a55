@@ -177,11 +177,10 @@ function DepartmentColumn({
                     <p className="text-[10px] font-display text-muted-foreground uppercase tracking-wider">
                       DIV {child.sort_order}
                     </p>
-                    {/* no extra here */}
                   </div>
-                  <p className="text-xs font-display font-semibold text-foreground mb-1">{child.name}</p>
+                  <p className="text-xs font-display font-semibold text-foreground mb-1">{child.full_name ?? child.name}</p>
                   <div className="flex items-center justify-between text-[10px] text-muted-foreground font-body">
-                    <span>• {child.manager_name ?? '—'}</span>
+                    <span>👤 {child.manager_name ?? '—'}</span>
                     <span>{childEmps}</span>
                   </div>
                 </div>
