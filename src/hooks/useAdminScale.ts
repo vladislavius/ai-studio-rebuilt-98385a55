@@ -115,6 +115,12 @@ export function useAdminScales() {
     return s;
   }, [scales, save]);
 
+  const addFullScale = useCallback((scale: AdminScale) => {
+    const updated = [...scales, scale];
+    save(updated);
+    setCurrentId(scale.id);
+  }, [scales, save]);
+
   const deleteScale = useCallback(async (id: string) => {
     const updated = scales.filter(s => s.id !== id);
     save(updated);
