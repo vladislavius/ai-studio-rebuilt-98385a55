@@ -181,12 +181,13 @@ export function AdminScalePage() {
 }
 
 // ─── Dashboard ───
-function DashboardView({ scales, onOpen, onDelete, onNewScale, onLoadTemplate }: {
+function DashboardView({ scales, onOpen, onDelete, onNewScale, onLoadTemplate, onOpenRef }: {
   scales: AdminScale[];
   onOpen: (id: string) => void;
   onDelete: (id: string) => void;
   onNewScale: () => void;
   onLoadTemplate: (builder: () => AdminScale) => void;
+  onOpenRef: () => void;
 }) {
   const templateCards = [
     { icon: '✦', title: 'Новая шкала', desc: 'Создайте административную шкалу — от Цели до ЦКП, с программами и задачами по всем правилам.', color: 'hsl(var(--primary))', onClick: onNewScale },
