@@ -4,6 +4,7 @@ import { useEmployees } from '@/hooks/useEmployees';
 import { useCompanySettings } from '@/hooks/useOrgChartMutations';
 import { useAuth } from '@/hooks/useAuth';
 import { Users, Plus, Settings, Pencil } from 'lucide-react';
+import { CyberneticCard } from '@/components/ui/cybernetic-card';
 import { DepartmentDetailPanel } from '@/components/orgchart/DepartmentDetailPanel';
 import { DepartmentEditModal } from '@/components/orgchart/DepartmentEditModal';
 import { CreateDepartmentModal } from '@/components/orgchart/CreateDepartmentModal';
