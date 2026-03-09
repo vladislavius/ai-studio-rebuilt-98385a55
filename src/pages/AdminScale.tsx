@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 import {
   useAdminScales, AdminScale, AdminScaleProgram, AdminScaleStep,
   STEP_TYPES, emptyProgram, emptyStep,
-  buildWifeTemplate, buildMarketingTemplate,
+  buildWifeTemplate, buildMarketingTemplate, buildExcursionsTemplate, buildTIPTemplate,
 } from '@/hooks/useAdminScale';
 
 type ASView = 'dashboard' | 'editor' | 'review';
