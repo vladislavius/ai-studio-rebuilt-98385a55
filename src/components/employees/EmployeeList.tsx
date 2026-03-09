@@ -81,7 +81,6 @@ export function EmployeeList({ onEdit }: EmployeeListProps) {
                 glowColor={mainDept?.color ?? 'hsl(var(--primary))'}
                 onClick={() => onEdit(emp.id)}
               >
-              >
                 {/* Color bar top */}
                 <div className="h-1.5 w-full" style={{ backgroundColor: mainDept?.color ?? 'hsl(var(--muted))' }} />
 
