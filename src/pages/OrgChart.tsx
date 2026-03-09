@@ -41,22 +41,16 @@ export function OrgChartPage() {
 
       {/* Founder & Executive Director */}
       <div className="flex flex-col items-center gap-0">
-        <div className="bg-card border border-border rounded-xl px-8 py-4 text-center relative">
-          <div className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-primary flex items-center justify-center">
-            <Crown size={10} className="text-primary-foreground" />
-          </div>
-          <p className="text-[10px] font-display font-bold text-primary uppercase tracking-widest">Основатель</p>
-          <p className="text-sm font-display font-bold text-foreground">Владелец</p>
+        <div className="bg-[#FFD700] border-2 border-[#DAA520] rounded-xl px-10 py-4 text-center relative shadow-lg">
+          <p className="text-sm font-display font-bold text-foreground">Основатель</p>
+          <p className="text-xs font-body text-foreground/70">Стратегическое руководство</p>
         </div>
-        <div className="w-px h-6 bg-border" />
-        <div className="bg-card border border-border rounded-xl px-8 py-4 text-center">
-          <div className="flex items-center gap-2 justify-center mb-1">
-            <Users size={14} className="text-muted-foreground" />
-          </div>
-          <p className="text-[10px] font-display font-bold text-muted-foreground uppercase tracking-widest">Исполнительный директор</p>
-          <p className="text-sm font-display font-bold text-foreground">ИД</p>
+        <div className="w-px h-6 bg-primary" />
+        <div className="bg-primary/10 border-2 border-primary rounded-xl px-10 py-4 text-center shadow-lg">
+          <p className="text-sm font-display font-bold text-foreground">Генеральный директор</p>
+          <p className="text-xs font-body text-foreground/70">Операционное управление</p>
         </div>
-        <div className="w-px h-6 bg-border" />
+        <div className="w-px h-6 bg-primary" />
       </div>
 
       {/* Horizontal connector line */}
