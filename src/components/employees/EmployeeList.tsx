@@ -4,7 +4,6 @@ import { useDepartments } from '@/hooks/useDepartments';
 import { Search, Trash2, Phone, Mail, MessageCircle } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { CyberneticCard } from '@/components/ui/cybernetic-card';
-import { Input } from '@/components/ui/input';
 
 interface EmployeeListProps {
   onEdit: (id: string) => void;
