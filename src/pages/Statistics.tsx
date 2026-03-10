@@ -42,6 +42,7 @@ export function StatisticsPage({ selectedDeptId }: StatisticsPageProps) {
   const deleteStatValue = useDeleteStatValue();
   const updateStatValue = useUpdateStatValue();
   const updateStatDef = useUpdateStatDefinition();
+  const deleteStatDef = useDeleteStatDefinition();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const editorRef = useRef<HTMLDivElement>(null);
 
