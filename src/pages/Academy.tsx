@@ -22,7 +22,7 @@ import { SupervisorAssignment } from '@/components/academy/SupervisorAssignment'
 type View = 'list' | 'detail' | 'study';
 
 export function AcademyPage() {
-  const { isAdmin, user } = useAuth();
+  const { isAdmin, isSupervisor, user } = useAuth();
   const { t } = useLabels();
   const qc = useQueryClient();
   const [view, setView] = useState<View>('list');
