@@ -365,7 +365,7 @@ export function StatisticsPage({ selectedDeptId }: StatisticsPageProps) {
         <div className="space-y-3">
           <div className="flex items-center gap-2 px-1">
             <div className="p-1.5 bg-muted rounded-lg text-muted-foreground"><Layers size={12} /></div>
-            <span className="text-[10px] font-display font-bold text-muted-foreground uppercase tracking-widest">Общие статистики департамента</span>
+             <span className="text-[10px] font-display font-bold text-muted-foreground uppercase tracking-widest">{t('stats.dept_stats')}</span>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
             {deptMainStats.map(stat => (
