@@ -35,6 +35,7 @@ export function CourseStudyView({ courseId, onBack, employeeId }: Props) {
   const qc = useQueryClient();
   const [activeIdx, setActiveIdx] = useState(0);
   const [completedIds, setCompletedIds] = useState<string[]>([]);
+  const [showWordClearing, setShowWordClearing] = useState(false);
 
   const { data: course } = useQuery({
     queryKey: ['course', courseId],
