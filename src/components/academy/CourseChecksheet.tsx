@@ -34,17 +34,20 @@ const TYPE_LABELS: Record<string, { label: string; icon: typeof BookOpen }> = {
   quiz: { label: 'Тест', icon: FileQuestion },
 };
 
-function ChecksheetItemEditor({ item, idx, totalItems, onUpdateItem, onMoveItem, onRemoveItem, onToggleFlag }: {
+function ChecksheetItemEditor({ item, idx, totalItems, onUpdateItem, onMoveItem, onRemoveItem, onToggleFlag, isNew }: {
   item: ChecksheetItem; idx: number; totalItems: number;
   onUpdateItem: (id: string, field: keyof ChecksheetItem, value: string) => void;
   onMoveItem: (index: number, dir: -1 | 1) => void;
   onRemoveItem: (id: string) => void;
   onToggleFlag: (id: string, flag: 'critical' | 'needsCheckout' | 'starred') => void;
+  isNew?: boolean;
 }) {
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(isNew || false);
+  const hasContent = !!(item.content && item.content.replace(/<[^>]*>/g, '').trim());
+
   return (
-    <div className="bg-card border border-border rounded-xl p-4 space-y-2">
-      <div className="flex items-center gap-2">
+    <div className="bg-card border border-border rounded-xl overflow-hidden">
+      <div className="flex items-center gap-2 p-4">
         <span className="text-xs font-display font-bold text-muted-foreground w-6 text-center">{idx + 1}</span>
         <div className="w-36">
           <Select value={item.type} onValueChange={v => onUpdateItem(item.id, 'type', v)}>
@@ -57,19 +60,42 @@ function ChecksheetItemEditor({ item, idx, totalItems, onUpdateItem, onMoveItem,
           </Select>
         </div>
         <Input value={item.title} onChange={e => onUpdateItem(item.id, 'title', e.target.value)} placeholder="Заголовок задания" className="flex-1 h-8 text-xs bg-background" />
-        <button onClick={() => setExpanded(!expanded)} className="p-1 rounded hover:bg-accent text-muted-foreground">
-          <ChevronRight size={14} className={`transition-transform ${expanded ? 'rotate-90' : ''}`} />
+
+        {hasContent ? (
+          <span className="flex items-center gap-1 text-[10px] font-display font-bold text-primary bg-primary/10 px-2 py-1 rounded-full whitespace-nowrap">
+            <CheckCircle2 size={12} /> Материал
+          </span>
+        ) : (
+          <span className="flex items-center gap-1 text-[10px] font-display font-bold text-destructive bg-destructive/10 px-2 py-1 rounded-full whitespace-nowrap">
+            <AlertTriangle size={12} /> Нет материала
+          </span>
+        )}
+
+        <button
+          onClick={() => setExpanded(!expanded)}
+          className={`flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-display font-bold transition-colors ${expanded ? 'bg-primary/10 text-primary' : 'bg-accent text-accent-foreground hover:bg-accent/80'}`}
+        >
+          <FileText size={12} />
+          {expanded ? 'Свернуть' : 'Редактировать'}
         </button>
+
         <div className="flex gap-0.5">
           <button onClick={() => onMoveItem(idx, -1)} disabled={idx === 0} className="p-1 rounded hover:bg-accent text-muted-foreground disabled:opacity-30"><ChevronUp size={14} /></button>
           <button onClick={() => onMoveItem(idx, 1)} disabled={idx === totalItems - 1} className="p-1 rounded hover:bg-accent text-muted-foreground disabled:opacity-30"><ChevronDown size={14} /></button>
           <button onClick={() => onRemoveItem(item.id)} className="p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive"><Trash2 size={14} /></button>
         </div>
       </div>
+
       {expanded && (
-        <div className="space-y-3 pt-2">
+        <div className="border-t border-border p-4 space-y-3 bg-muted/20">
           <div>
             <label className="text-[10px] font-display font-bold text-muted-foreground uppercase block mb-1">Учебный материал (WYSIWYG)</label>
+            {!hasContent && (
+              <div className="flex items-center gap-2 mb-2 p-2 rounded-lg bg-destructive/5 border border-destructive/20">
+                <AlertTriangle size={14} className="text-destructive shrink-0" />
+                <span className="text-[11px] font-body text-muted-foreground">Добавьте учебный материал для этого шага — студенты увидят его при прохождении курса</span>
+              </div>
+            )}
             <RichTextEditor
               content={item.content || ''}
               onChange={html => onUpdateItem(item.id, 'content', html)}
@@ -84,11 +110,11 @@ function ChecksheetItemEditor({ item, idx, totalItems, onUpdateItem, onMoveItem,
             </label>
             <label className="flex items-center gap-1.5 text-[10px] font-display cursor-pointer">
               <input type="checkbox" checked={item.needsCheckout || false} onChange={() => onToggleFlag(item.id, 'needsCheckout')} className="rounded" />
-              <span className="text-rose-500 font-bold">✅ Нужен чек-аут</span>
+              <span className="text-destructive font-bold">✅ Нужен чек-аут</span>
             </label>
             <label className="flex items-center gap-1.5 text-[10px] font-display cursor-pointer">
               <input type="checkbox" checked={item.starred || false} onChange={() => onToggleFlag(item.id, 'starred')} className="rounded" />
-              <span className="text-amber-500 font-bold">⭐ Звёздочный</span>
+              <span className="text-primary font-bold">⭐ Звёздочный</span>
             </label>
           </div>
         </div>
