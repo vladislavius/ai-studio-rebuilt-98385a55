@@ -3,6 +3,8 @@ import { useDepartments, DBDepartment } from '@/hooks/useDepartments';
 import { useEmployees } from '@/hooks/useEmployees';
 import { useCompanySettings } from '@/hooks/useOrgChartMutations';
 import { useAuth } from '@/hooks/useAuth';
+import { useLabels } from '@/hooks/useLabels';
+import { EditableLabel } from '@/components/ui/editable-label';
 import { Users, Plus, Settings, Pencil } from 'lucide-react';
 import { CyberneticCard } from '@/components/ui/cybernetic-card';
 import { DepartmentDetailPanel } from '@/components/orgchart/DepartmentDetailPanel';
@@ -16,13 +18,14 @@ export function OrgChartPage() {
   const { data: employees } = useEmployees();
   const { data: settings } = useCompanySettings();
   const { isAdmin } = useAuth();
+  const { t } = useLabels();
 
   const [selectedDeptId, setSelectedDeptId] = useState<string | null>(null);
   const [editDept, setEditDept] = useState<DBDepartment | null>(null);
-  const [createParent, setCreateParent] = useState<DBDepartment | null | undefined>(undefined); // undefined = closed
+  const [createParent, setCreateParent] = useState<DBDepartment | null | undefined>(undefined);
   const [showCompanySettings, setShowCompanySettings] = useState(false);
 
-  if (isLoading) return <div className="text-center py-12 text-muted-foreground text-sm">Загрузка оргсхемы...</div>;
+  if (isLoading) return <div className="text-center py-12 text-muted-foreground text-sm">{t('org.loading')}</div>;
 
   const allDepts = departments ?? [];
   const emps = employees ?? [];
@@ -50,18 +53,18 @@ export function OrgChartPage() {
     <div className="space-y-6 relative">
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl md:text-3xl font-display font-bold text-foreground mb-1">Организационная структура компании</h1>
+          <EditableLabel labelKey="org.title" as="h1" className="text-2xl md:text-3xl font-display font-bold text-foreground mb-1" />
           <p className="text-sm text-muted-foreground font-body">
-            Оргсхема — {rootDepts.length} департаментов, {allDepts.length - rootDepts.length} отделов
+            {t('org.subtitle_prefix')} — {rootDepts.length} {t('org.departments')}, {allDepts.length - rootDepts.length} {t('org.divisions')}
           </p>
         </div>
         {isAdmin && (
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={() => setShowCompanySettings(true)}>
-              <Settings size={14} className="mr-1" /> Настройки
+              <Settings size={14} className="mr-1" /> {t('org.settings')}
             </Button>
             <Button size="sm" onClick={() => setCreateParent(null)}>
-              <Plus size={14} className="mr-1" /> Департамент
+              <Plus size={14} className="mr-1" /> {t('org.add_dept')}
             </Button>
           </div>
         )}
@@ -73,8 +76,8 @@ export function OrgChartPage() {
           className="bg-[#FFD700] border-2 border-[#DAA520] rounded-xl px-10 py-4 text-center relative shadow-lg group cursor-pointer"
           onClick={() => isAdmin && setShowCompanySettings(true)}
         >
-          <p className="text-sm font-display font-bold text-gray-900">{s.founder_title ?? 'Основатель'}</p>
-          <p className="text-xs font-body text-gray-700">{s.founder_subtitle ?? 'Стратегическое руководство'}</p>
+          <p className="text-sm font-display font-bold text-gray-900">{s.founder_title ?? t('org.founder')}</p>
+          <p className="text-xs font-body text-gray-700">{s.founder_subtitle ?? t('org.founder_subtitle')}</p>
           {isAdmin && (
             <span className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
               <Pencil size={12} className="text-foreground/50" />
@@ -86,8 +89,8 @@ export function OrgChartPage() {
           className="bg-primary/10 border-2 border-primary rounded-xl px-10 py-4 text-center shadow-lg group cursor-pointer"
           onClick={() => isAdmin && setShowCompanySettings(true)}
         >
-          <p className="text-sm font-display font-bold text-foreground">{s.ceo_title ?? 'Генеральный директор'}</p>
-          <p className="text-xs font-body text-foreground/70">{s.ceo_subtitle ?? 'Операционное управление'}</p>
+          <p className="text-sm font-display font-bold text-foreground">{s.ceo_title ?? t('org.ceo')}</p>
+          <p className="text-xs font-body text-foreground/70">{s.ceo_subtitle ?? t('org.ceo_subtitle')}</p>
           {isAdmin && (
             <span className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
               <Pencil size={12} className="text-foreground/50" />
@@ -130,7 +133,7 @@ export function OrgChartPage() {
           onClick={() => isAdmin && setShowCompanySettings(true)}
         >
           <div className="text-2xl mb-2">🎯</div>
-          <p className="text-xs font-display font-bold text-primary uppercase tracking-widest mb-3">Цель Компании</p>
+          <EditableLabel labelKey="org.company_goal" as="p" className="text-xs font-display font-bold text-primary uppercase tracking-widest mb-3" />
           <p className="text-xs font-body text-muted-foreground leading-relaxed">
             {s.company_goal ?? '—'}
           </p>
@@ -140,7 +143,7 @@ export function OrgChartPage() {
           onClick={() => isAdmin && setShowCompanySettings(true)}
         >
           <div className="text-2xl mb-2">👑</div>
-          <p className="text-xs font-display font-bold text-primary uppercase tracking-widest mb-3">ЦКП Компании</p>
+          <EditableLabel labelKey="org.company_vfp" as="p" className="text-xs font-display font-bold text-primary uppercase tracking-widest mb-3" />
           <p className="text-xs font-body text-muted-foreground leading-relaxed">
             {s.company_vfp ?? '—'}
           </p>
@@ -160,26 +163,9 @@ export function OrgChartPage() {
         />
       )}
 
-      {/* Edit Modal */}
-      <DepartmentEditModal
-        dept={editDept}
-        open={!!editDept}
-        onClose={() => setEditDept(null)}
-      />
-
-      {/* Create Modal */}
-      <CreateDepartmentModal
-        open={createParent !== undefined}
-        onClose={() => setCreateParent(undefined)}
-        parentDept={createParent ?? null}
-        allDepts={allDepts}
-      />
-
-      {/* Company Settings Modal */}
-      <CompanySettingsModal
-        open={showCompanySettings}
-        onClose={() => setShowCompanySettings(false)}
-      />
+      <DepartmentEditModal dept={editDept} open={!!editDept} onClose={() => setEditDept(null)} />
+      <CreateDepartmentModal open={createParent !== undefined} onClose={() => setCreateParent(undefined)} parentDept={createParent ?? null} allDepts={allDepts} />
+      <CompanySettingsModal open={showCompanySettings} onClose={() => setShowCompanySettings(false)} />
     </div>
   );
 }
@@ -196,6 +182,8 @@ function DepartmentColumn({
   onAddChild?: (d: DBDepartment) => void;
   isSelected: boolean;
 }) {
+  const { t } = useLabels();
+
   return (
     <CyberneticCard
       glowColor={dept.color ?? 'hsl(var(--primary))'}
@@ -270,7 +258,7 @@ function DepartmentColumn({
         )}
 
         {children.length === 0 && (
-          <div className="text-[10px] text-muted-foreground/50 font-body italic">Нет подразделений</div>
+          <div className="text-[10px] text-muted-foreground/50 font-body italic">{t('org.no_divisions')}</div>
         )}
 
         {onAddChild && (
@@ -278,7 +266,7 @@ function DepartmentColumn({
             onClick={(e) => { e.stopPropagation(); onAddChild(dept); }}
             className="mt-2 w-full py-1.5 border border-dashed border-border rounded-lg text-[10px] text-muted-foreground font-display opacity-0 group-hover:opacity-100 transition-opacity hover:border-primary hover:text-primary flex items-center justify-center gap-1"
           >
-            <Plus size={10} /> Добавить отдел
+            <Plus size={10} /> {t('org.add_division')}
           </button>
         )}
       </div>

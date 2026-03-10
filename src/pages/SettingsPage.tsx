@@ -1,14 +1,18 @@
 import { useState } from 'react';
-import { Settings, Database, Bell, Shield, Download, Upload, Users, FileText, Loader2 } from 'lucide-react';
+import { Settings, Database, Bell, Shield, Download, Upload, Users, FileText, Loader2, Type } from 'lucide-react';
 import { useEmployees } from '@/hooks/useEmployees';
 import { useDepartments } from '@/hooks/useDepartments';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useLabels } from '@/hooks/useLabels';
+import { EditableLabel } from '@/components/ui/editable-label';
+import { TerminologyEditor } from '@/components/settings/TerminologyEditor';
 import { toast } from 'sonner';
 
 export function SettingsPage() {
   const { user } = useAuth();
+  const { t } = useLabels();
   const { data: employees } = useEmployees();
   const { data: departments } = useDepartments();
   const [activeSection, setActiveSection] = useState<string | null>(null);
@@ -63,17 +67,18 @@ export function SettingsPage() {
   };
 
   const sections = [
-    { id: 'users', icon: Users, title: 'Пользователи и роли', desc: `${profiles?.length ?? 0} пользователей в системе` },
-    { id: 'export', icon: Download, title: 'Экспорт данных', desc: 'Выгрузка сотрудников и оргсхемы в CSV' },
-    { id: 'database', icon: Database, title: 'База данных', desc: 'Информация о подключении к Lovable Cloud' },
-    { id: 'notifications', icon: Bell, title: 'Уведомления', desc: 'Настройки уведомлений (в разработке)' },
+    { id: 'terminology', icon: Type, title: t('settings.terminology'), desc: t('settings.terminology_desc') },
+    { id: 'users', icon: Users, title: t('settings.users'), desc: `${profiles?.length ?? 0} пользователей в системе` },
+    { id: 'export', icon: Download, title: t('settings.export'), desc: 'Выгрузка сотрудников и оргсхемы в CSV' },
+    { id: 'database', icon: Database, title: t('settings.database'), desc: 'Информация о подключении к Lovable Cloud' },
+    { id: 'notifications', icon: Bell, title: t('settings.notifications'), desc: 'Настройки уведомлений (в разработке)' },
   ];
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl md:text-3xl font-display font-bold text-foreground mb-1">Настройки</h1>
-        <p className="text-sm text-muted-foreground font-body">Конфигурация системы и управление данными</p>
+        <EditableLabel labelKey="settings.title" as="h1" className="text-2xl md:text-3xl font-display font-bold text-foreground mb-1" />
+        <EditableLabel labelKey="settings.subtitle" as="p" className="text-sm text-muted-foreground font-body" />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -89,6 +94,13 @@ export function SettingsPage() {
           </button>
         ))}
       </div>
+
+      {/* Terminology Editor */}
+      {activeSection === 'terminology' && (
+        <div className="bg-card border border-border rounded-xl p-5">
+          <TerminologyEditor />
+        </div>
+      )}
 
       {/* Users & Roles */}
       {activeSection === 'users' && (
@@ -137,7 +149,7 @@ export function SettingsPage() {
       {/* Export */}
       {activeSection === 'export' && (
         <div className="bg-card border border-border rounded-xl p-5 space-y-4">
-          <h2 className="font-display font-bold text-foreground">Экспорт данных</h2>
+          <h2 className="font-display font-bold text-foreground">{t('settings.export')}</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <button
               onClick={exportEmployeesCSV}
@@ -186,7 +198,7 @@ export function SettingsPage() {
       {activeSection === 'notifications' && (
         <div className="bg-card border border-border rounded-xl p-5 text-center">
           <Bell size={40} className="text-muted-foreground/30 mx-auto mb-3" />
-          <p className="font-display font-semibold text-foreground mb-1">Уведомления</p>
+          <p className="font-display font-semibold text-foreground mb-1">{t('settings.notifications')}</p>
           <p className="text-xs text-muted-foreground">Функция находится в разработке. Здесь будет настройка Telegram-бота и push-уведомлений.</p>
         </div>
       )}
