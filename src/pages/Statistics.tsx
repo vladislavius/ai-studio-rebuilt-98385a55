@@ -30,6 +30,7 @@ function sortDepartments(departments: DBDepartment[]): DBDepartment[] {
 }
 
 export function StatisticsPage({ selectedDeptId }: StatisticsPageProps) {
+  const { t } = useLabels();
   const { data: allDefinitions, isLoading } = useStatisticDefinitions();
   const { data: allValuesMap } = useAllStatisticValues();
   const { data: departments } = useDepartments();
