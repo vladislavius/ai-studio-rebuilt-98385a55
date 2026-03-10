@@ -960,6 +960,51 @@ export type Database = {
           },
         ]
       }
+      student_answers: {
+        Row: {
+          answer_html: string
+          course_id: string
+          created_at: string
+          employee_id: string
+          id: string
+          step_id: string
+          updated_at: string
+        }
+        Insert: {
+          answer_html?: string
+          course_id: string
+          created_at?: string
+          employee_id: string
+          id?: string
+          step_id: string
+          updated_at?: string
+        }
+        Update: {
+          answer_html?: string
+          course_id?: string
+          created_at?: string
+          employee_id?: string
+          id?: string
+          step_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_answers_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_answers_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       training_messages: {
         Row: {
           course_id: string
