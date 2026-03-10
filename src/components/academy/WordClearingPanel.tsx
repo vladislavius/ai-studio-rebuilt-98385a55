@@ -101,7 +101,7 @@ export function WordClearingPanel({ courseId, employeeId, stepId, onClose }: Pro
   );
 
   const unclearedCount = logs.filter(l => !l.cleared).length;
-  const alreadyLogged = new Set(logs.map(l => t => t.toLowerCase()));
+  const alreadyLogged = new Set(logs.map(l => l.term.toLowerCase()));
 
   return (
     <div className="bg-card border border-border rounded-xl overflow-hidden">
