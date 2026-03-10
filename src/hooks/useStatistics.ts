@@ -16,6 +16,26 @@ export function useStatisticDefinitions(ownerType?: string, ownerId?: string) {
   });
 }
 
+export function useAllStatisticValues() {
+  return useQuery({
+    queryKey: ['stat-values-all'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('statistic_values')
+        .select('*')
+        .order('date', { ascending: true });
+      if (error) throw error;
+      // Group by definition_id
+      const grouped: Record<string, { date: string; value: number; value2: number | null }[]> = {};
+      data.forEach(v => {
+        if (!grouped[v.definition_id]) grouped[v.definition_id] = [];
+        grouped[v.definition_id].push({ date: v.date, value: Number(v.value), value2: v.value2 != null ? Number(v.value2) : null });
+      });
+      return grouped;
+    },
+  });
+}
+
 export function useStatisticValues(definitionId: string | null) {
   return useQuery({
     queryKey: ['stat-values', definitionId],
@@ -46,7 +66,50 @@ export function useCreateStatValue() {
     },
     onSuccess: (_, vars) => {
       qc.invalidateQueries({ queryKey: ['stat-values', vars.definition_id] });
+      qc.invalidateQueries({ queryKey: ['stat-values-all'] });
       toast.success('Значение добавлено');
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+}
+
+export function useUpdateStatValue() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ...val }: { id: string; value?: number; value2?: number; date?: string; condition?: string; notes?: string }) => {
+      const { data, error } = await supabase
+        .from('statistic_values')
+        .update(val)
+        .eq('id', id)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: ['stat-values', data.definition_id] });
+      qc.invalidateQueries({ queryKey: ['stat-values-all'] });
+      toast.success('Значение обновлено');
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+}
+
+export function useDeleteStatValue() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, definitionId }: { id: string; definitionId: string }) => {
+      const { error } = await supabase
+        .from('statistic_values')
+        .delete()
+        .eq('id', id);
+      if (error) throw error;
+      return definitionId;
+    },
+    onSuccess: (definitionId) => {
+      qc.invalidateQueries({ queryKey: ['stat-values', definitionId] });
+      qc.invalidateQueries({ queryKey: ['stat-values-all'] });
+      toast.success('Значение удалено');
     },
     onError: (e: Error) => toast.error(e.message),
   });
