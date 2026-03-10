@@ -153,7 +153,7 @@ export function AppSidebar({
         <div className="flex gap-2">
           <button
             onClick={toggleTheme}
-            className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-border text-muted-foreground hover:text-foreground hover:bg-accent font-display font-medium transition-colors text-sm ${isSidebarCollapsed ? 'flex-1 px-0' : ''}`}
+            className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-sidebar-border text-sidebar-foreground hover:text-sidebar-accent-foreground hover:bg-sidebar-accent font-display font-medium transition-colors text-sm ${isSidebarCollapsed ? 'flex-1 px-0' : ''}`}
             title={theme === 'dark' ? 'Светлая тема' : 'Тёмная тема'}
           >
             {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
