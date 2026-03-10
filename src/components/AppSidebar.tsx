@@ -210,10 +210,20 @@ function DepartmentsList({
 }: {
   isCollapsed: boolean; currentView: ViewMode; selectedDept: string | null; onSelectDept: (deptId: string) => void;
 }) {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(true);
   const { data: departments } = useDepartments();
 
   if (isCollapsed) return null;
+
+  // Only show top-level departments (no parent_id)
+  const topLevelDepts = (departments ?? [])
+    .filter(d => !d.parent_id)
+    .sort((a, b) => {
+      const order = ['7', '1', '2', '3', '4', '5', '6'];
+      const aIdx = order.indexOf(a.code.replace(/\D/g, '').charAt(0));
+      const bIdx = order.indexOf(b.code.replace(/\D/g, '').charAt(0));
+      return (aIdx === -1 ? 999 : aIdx) - (bIdx === -1 ? 999 : bIdx);
+    });
 
   return (
     <>
@@ -227,8 +237,8 @@ function DepartmentsList({
         <span className="whitespace-nowrap">Департаменты</span>
       </button>
       {isExpanded && (
-        <div className="mt-1 space-y-0.5">
-          {(departments ?? []).map(dept => {
+        <div className="mt-1 space-y-0.5 pl-2">
+          {topLevelDepts.map(dept => {
             const isActive = currentView === 'statistics' && selectedDept === dept.id;
             return (
               <button
