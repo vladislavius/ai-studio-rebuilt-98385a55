@@ -43,6 +43,7 @@ export function StatisticsPage({ selectedDeptId }: StatisticsPageProps) {
   const updateStatValue = useUpdateStatValue();
   const updateStatDef = useUpdateStatDefinition();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const editorRef = useRef<HTMLDivElement>(null);
 
   // Modal tabs
   const [modalTab, setModalTab] = useState<'view' | 'program'>('view');
