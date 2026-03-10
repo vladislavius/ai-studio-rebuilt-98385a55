@@ -17,7 +17,21 @@ const STATUS_LABELS: Record<StatusFilter, string> = {
 };
 
 export function ProgressDashboard() {
+  const { isAdmin, isSupervisor } = useAuth();
+  const qc = useQueryClient();
   const [filter, setFilter] = useState<StatusFilter>('all');
+
+  const certifyMut = useMutation({
+    mutationFn: async (progressId: string) => {
+      const { error } = await supabase.from('course_progress').update({ certified: true }).eq('id', progressId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['all-course-progress'] });
+      toast.success('Курс сертифицирован ✓');
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
 
   const { data: progress, isLoading } = useQuery({
     queryKey: ['all-course-progress'],
