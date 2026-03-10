@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { GraduationCap, BookOpen, Plus, Trash2, Eye, EyeOff, ArrowLeft, ClipboardList, BarChart3 } from 'lucide-react';
+import { GraduationCap, BookOpen, Plus, Trash2, Eye, EyeOff, ArrowLeft, ClipboardList, BarChart3, FileText } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import { CourseChecksheet } from '@/components/academy/CourseChecksheet';
 import { CourseStudyView } from '@/components/academy/CourseStudyView';
 import { ProgressDashboard } from '@/components/academy/ProgressDashboard';
+import { AcademyDocsPage } from '@/components/academy/AcademyDocsPage';
 
 type View = 'list' | 'detail' | 'study';
 
@@ -97,8 +98,11 @@ export function AcademyPage() {
           <TabsTrigger value="courses" className="flex items-center gap-1.5">
             <ClipboardList size={14} /> Курсы
           </TabsTrigger>
-          <TabsTrigger value="progress" className="flex items-center gap-1.5">
+           <TabsTrigger value="progress" className="flex items-center gap-1.5">
             <BarChart3 size={14} /> Прогресс
+          </TabsTrigger>
+          <TabsTrigger value="docs" className="flex items-center gap-1.5">
+            <FileText size={14} /> Документация
           </TabsTrigger>
         </TabsList>
 
@@ -167,6 +171,10 @@ export function AcademyPage() {
 
         <TabsContent value="progress">
           <ProgressDashboard />
+        </TabsContent>
+
+        <TabsContent value="docs">
+          <AcademyDocsPage />
         </TabsContent>
       </Tabs>
     </div>
