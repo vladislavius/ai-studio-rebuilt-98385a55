@@ -3,7 +3,7 @@ import { TrendingUp, TrendingDown, LayoutDashboard, List, Layers, Download, Uplo
 import { useStatisticDefinitions, useAllStatisticValues, useStatisticValues, useCreateStatValue, useDeleteStatValue } from '@/hooks/useStatistics';
 import { useDepartments, DBDepartment } from '@/hooks/useDepartments';
 import { StatCard } from '@/components/statistics/StatCard';
-import { PERIODS, PeriodType, getFilteredValues, analyzeTrend, calculateCondition, getConditionInfo, CONDITIONS } from '@/utils/statistics';
+import { PERIODS, PeriodType, getFilteredValues, analyzeTrend, calculateCondition, getConditionInfo, CONDITIONS, calculateTrendLine } from '@/utils/statistics';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, ReferenceLine } from 'recharts';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
