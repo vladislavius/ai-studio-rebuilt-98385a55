@@ -814,72 +814,31 @@ function ReviewView({ scale }: { scale: AdminScale }) {
   );
 }
 
-// ─── Mind Map Modal ───
+// ─── Mind Map Modal (SVG-based, auto-sizing, scrollable) ───
 function MindMapModal({ scale, onClose }: { scale: AdminScale; onClose: () => void }) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const levels = [
+    { label: '🎯 Цель', text: scale.goal, color: '#c9a84c' },
+    { label: '💡 Замыслы', text: scale.purpose, color: '#d4a843' },
+    { label: '📜 Политика', text: scale.policy, color: '#8a9bb5' },
+    { label: '🗺 План', text: scale.plan, color: '#2980b9' },
+    { label: '🌟 Идеальная картина', text: scale.ideal, color: '#8a9bb5' },
+    { label: '📈 Статистики', text: scale.stats, color: '#27ae60' },
+    { label: '🏆 ЦКП', text: scale.vfp, color: '#e67e22' },
+  ].filter(l => l.text);
+
+  const programs = scale.programs;
+  const leftH = levels.length * 44 + 60;
+  const rightH = programs.reduce((sum, p) => sum + 36 + p.steps.length * 26 + 16, 0) + 60;
+  const svgH = Math.max(500, leftH + 120, rightH + 120);
+  const svgW = 1400;
+  const cx = svgW / 2;
+  const cyTitle = 50;
+  const cyNode = 90;
 
   const exportSVG = useCallback(() => {
-    // Build SVG mind-map
-    const levels = [
-      { label: '🎯 Цель', text: scale.goal, color: '#c9a84c' },
-      { label: '💡 Замыслы', text: scale.purpose, color: '#d4a843' },
-      { label: '📜 Политика', text: scale.policy, color: '#8a9bb5' },
-      { label: '🗺 План', text: scale.plan, color: '#2980b9' },
-      { label: '🌟 Идеальная картина', text: scale.ideal, color: '#8a9bb5' },
-      { label: '📈 Статистики', text: scale.stats, color: '#27ae60' },
-      { label: '🏆 ЦКП', text: scale.vfp, color: '#e67e22' },
-    ].filter(l => l.text);
-
-    const programs = scale.programs;
-    const totalNodes = levels.length + programs.length + programs.reduce((s, p) => s + p.steps.length, 0);
-    const svgH = Math.max(600, totalNodes * 35 + 200);
-    const svgW = 1200;
-
-    let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${svgW}" height="${svgH}" style="background:#0f1419;font-family:sans-serif">`;
-
-    // Title
-    svg += `<text x="${svgW / 2}" y="40" fill="#c9a84c" font-size="20" font-weight="bold" text-anchor="middle">${escSvg(scale.name)}</text>`;
-
-    // Central node
-    const cx = svgW / 2, cy = 80;
-    svg += `<rect x="${cx - 100}" y="${cy - 15}" width="200" height="30" rx="6" fill="#1a2332" stroke="#c9a84c"/>`;
-    svg += `<text x="${cx}" y="${cy + 5}" fill="#c9a84c" font-size="12" font-weight="bold" text-anchor="middle">Административная Шкала</text>`;
-
-    // Left branch: levels
-    let ly = 130;
-    levels.forEach(l => {
-      svg += `<line x1="${cx}" y1="${cy + 15}" x2="200" y2="${ly}" stroke="${l.color}40" stroke-width="1"/>`;
-      svg += `<rect x="30" y="${ly - 12}" width="340" height="24" rx="4" fill="#1a2332" stroke="${l.color}60"/>`;
-      svg += `<text x="40" y="${ly + 4}" fill="${l.color}" font-size="11" font-weight="bold">${escSvg(l.label)}</text>`;
-      const truncated = l.text.length > 35 ? l.text.slice(0, 35) + '…' : l.text;
-      svg += `<text x="170" y="${ly + 4}" fill="#8a9bb5" font-size="10">${escSvg(truncated)}</text>`;
-      ly += 32;
-    });
-
-    // Right branch: programs
-    let py = 130;
-    programs.forEach((prog, pi) => {
-      svg += `<line x1="${cx}" y1="${cy + 15}" x2="${svgW - 200}" y2="${py}" stroke="#8b5cf640" stroke-width="1"/>`;
-      svg += `<rect x="${svgW - 370}" y="${py - 12}" width="340" height="24" rx="4" fill="#1a2332" stroke="#8b5cf660"/>`;
-      svg += `<text x="${svgW - 360}" y="${py + 4}" fill="#8b5cf6" font-size="11" font-weight="bold">⚡ Программа ${pi + 1}: ${escSvg(prog.name.slice(0, 25))}</text>`;
-      py += 30;
-
-      prog.steps.forEach((st, si) => {
-        const stColor = STEP_TYPE_COLORS[st.type]?.replace('hsl(', '').replace(')', '') || '';
-        svg += `<line x1="${svgW - 200}" y1="${py - 20}" x2="${svgW - 150}" y2="${py}" stroke="#ffffff10" stroke-width="1"/>`;
-        svg += `<rect x="${svgW - 340}" y="${py - 10}" width="310" height="20" rx="3" fill="#0f1419" stroke="#ffffff15"/>`;
-        const truncName = st.name.length > 30 ? st.name.slice(0, 30) + '…' : st.name;
-        svg += `<text x="${svgW - 330}" y="${py + 4}" fill="#8a9bb5" font-size="9">${si + 1}. ${escSvg(truncName)}</text>`;
-        py += 22;
-      });
-      py += 10;
-    });
-
-    const finalH = Math.max(svgH, ly + 50, py + 50);
-    svg = svg.replace(`height="${svgH}"`, `height="${finalH}"`);
-    svg += '</svg>';
-
-    const blob = new Blob([svg], { type: 'image/svg+xml' });
+    const svgEl = document.getElementById('mindmap-svg');
+    if (!svgEl) return;
+    const blob = new Blob([svgEl.outerHTML], { type: 'image/svg+xml' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -889,112 +848,12 @@ function MindMapModal({ scale, onClose }: { scale: AdminScale; onClose: () => vo
     toast.success('Mind-карта экспортирована как SVG');
   }, [scale]);
 
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    const dpr = window.devicePixelRatio || 1;
-    const w = canvas.clientWidth;
-    const h = canvas.clientHeight;
-    canvas.width = w * dpr;
-    canvas.height = h * dpr;
-    ctx.scale(dpr, dpr);
-
-    // Background
-    ctx.fillStyle = '#0f1419';
-    ctx.fillRect(0, 0, w, h);
-
-    // Title
-    ctx.fillStyle = '#c9a84c';
-    ctx.font = 'bold 16px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText(scale.name, w / 2, 30);
-
-    // Central node
-    const cx = w / 2, cy = 60;
-    drawRoundRect(ctx, cx - 80, cy - 14, 160, 28, 6, '#1a2332', '#c9a84c');
-    ctx.fillStyle = '#c9a84c';
-    ctx.font = 'bold 11px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('Административная Шкала', cx, cy + 4);
-
-    // Levels (left side)
-    const levelData = [
-      { label: '🎯 Цель', text: scale.goal, color: '#c9a84c' },
-      { label: '💡 Замыслы', text: scale.purpose, color: '#d4a843' },
-      { label: '📜 Политика', text: scale.policy, color: '#8a9bb5' },
-      { label: '🗺 План', text: scale.plan, color: '#2980b9' },
-      { label: '🌟 Идеальная', text: scale.ideal, color: '#8a9bb5' },
-      { label: '📈 Статистики', text: scale.stats, color: '#27ae60' },
-      { label: '🏆 ЦКП', text: scale.vfp, color: '#e67e22' },
-    ].filter(l => l.text);
-
-    let ly = 100;
-    levelData.forEach(l => {
-      ctx.strokeStyle = l.color + '40';
-      ctx.beginPath();
-      ctx.moveTo(cx, cy + 14);
-      ctx.lineTo(160, ly);
-      ctx.stroke();
-
-      drawRoundRect(ctx, 20, ly - 12, 280, 24, 4, '#1a2332', l.color + '60');
-      ctx.fillStyle = l.color;
-      ctx.font = 'bold 10px sans-serif';
-      ctx.textAlign = 'left';
-      ctx.fillText(l.label, 30, ly + 4);
-      ctx.fillStyle = '#8a9bb5';
-      ctx.font = '9px sans-serif';
-      const truncated = l.text.length > 25 ? l.text.slice(0, 25) + '…' : l.text;
-      ctx.fillText(truncated, 130, ly + 4);
-      ly += 30;
-    });
-
-    // Programs (right side)
-    let py = 100;
-    scale.programs.forEach((prog, pi) => {
-      ctx.strokeStyle = '#8b5cf640';
-      ctx.beginPath();
-      ctx.moveTo(cx, cy + 14);
-      ctx.lineTo(w - 160, py);
-      ctx.stroke();
-
-      drawRoundRect(ctx, w - 310, py - 12, 290, 24, 4, '#1a2332', '#8b5cf660');
-      ctx.fillStyle = '#8b5cf6';
-      ctx.font = 'bold 10px sans-serif';
-      ctx.textAlign = 'left';
-      const progLabel = `⚡ П${pi + 1}: ${prog.name.slice(0, 22)}`;
-      ctx.fillText(progLabel, w - 300, py + 4);
-      py += 28;
-
-      prog.steps.slice(0, 8).forEach((st, si) => {
-        ctx.strokeStyle = '#ffffff10';
-        ctx.beginPath();
-        ctx.moveTo(w - 165, py - 18);
-        ctx.lineTo(w - 140, py);
-        ctx.stroke();
-
-        drawRoundRect(ctx, w - 290, py - 10, 270, 20, 3, '#0f1419', '#ffffff15');
-        ctx.fillStyle = st.done ? '#27ae60' : '#8a9bb5';
-        ctx.font = '9px sans-serif';
-        const truncName = st.name.length > 28 ? st.name.slice(0, 28) + '…' : st.name;
-        ctx.fillText(`${si + 1}. ${truncName}`, w - 280, py + 3);
-        py += 22;
-      });
-      if (prog.steps.length > 8) {
-        ctx.fillStyle = '#8a9bb580';
-        ctx.font = '9px sans-serif';
-        ctx.fillText(`... ещё ${prog.steps.length - 8} задач`, w - 280, py + 3);
-        py += 22;
-      }
-      py += 8;
-    });
-  }, [scale]);
+  let ly = 140;
+  let py = 140;
 
   return (
     <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-card border border-border rounded-xl w-full max-w-5xl h-[80vh] flex flex-col" onClick={e => e.stopPropagation()}>
+      <div className="bg-card border border-border rounded-xl w-full max-w-7xl h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between p-4 border-b border-border">
           <h3 className="font-display font-bold text-foreground">🧠 Mind-карта: {scale.name}</h3>
           <div className="flex gap-2">
@@ -1005,21 +864,71 @@ function MindMapModal({ scale, onClose }: { scale: AdminScale; onClose: () => vo
           </div>
         </div>
         <div className="flex-1 overflow-auto p-2">
-          <canvas ref={canvasRef} className="w-full h-full rounded-lg" style={{ minHeight: 500 }} />
+          <svg id="mindmap-svg" xmlns="http://www.w3.org/2000/svg" width={svgW} height={svgH}
+            style={{ background: '#0f1419', borderRadius: 8, display: 'block', minWidth: svgW }}>
+            {/* Title */}
+            <text x={cx} y={cyTitle} fill="#c9a84c" fontSize="22" fontWeight="bold" textAnchor="middle" fontFamily="sans-serif">
+              {scale.name}
+            </text>
+            {/* Central node */}
+            <rect x={cx - 130} y={cyNode - 18} width={260} height={36} rx={8} fill="#1a2332" stroke="#c9a84c" strokeWidth={1.5} />
+            <text x={cx} y={cyNode + 5} fill="#c9a84c" fontSize="14" fontWeight="bold" textAnchor="middle" fontFamily="sans-serif">
+              Административная Шкала
+            </text>
+
+            {/* Left branch: levels */}
+            {levels.map((l, i) => {
+              const y = 140 + i * 44;
+              return (
+                <g key={`level-${i}`}>
+                  <line x1={cx - 130} y1={cyNode + 18} x2={380} y2={y} stroke={l.color + '40'} strokeWidth={1} />
+                  <rect x={30} y={y - 16} width={400} height={32} rx={6} fill="#1a2332" stroke={l.color + '70'} strokeWidth={1} />
+                  <text x={45} y={y + 5} fill={l.color} fontSize="13" fontWeight="bold" fontFamily="sans-serif">
+                    {l.label}
+                  </text>
+                  <text x={200} y={y + 5} fill="#8a9bb5" fontSize="11" fontFamily="sans-serif">
+                    {l.text.length > 40 ? l.text.slice(0, 40) + '…' : l.text}
+                  </text>
+                </g>
+              );
+            })}
+
+            {/* Right branch: programs */}
+            {(() => {
+              let currentY = 140;
+              return programs.map((prog, pi) => {
+                const progY = currentY;
+                const stepNodes = prog.steps.map((st, si) => {
+                  const stepY = progY + 36 + si * 26;
+                  return (
+                    <g key={`step-${pi}-${si}`}>
+                      <line x1={svgW - 400} y1={progY + 14} x2={svgW - 380} y2={stepY} stroke="#ffffff15" strokeWidth={1} />
+                      <rect x={svgW - 380} y={stepY - 11} width={350} height={22} rx={4} fill="#0f1419" stroke="#ffffff18" strokeWidth={1} />
+                      <text x={svgW - 370} y={stepY + 4} fill={st.done ? '#27ae60' : '#8a9bb5'} fontSize="10" fontFamily="sans-serif">
+                        {si + 1}. {st.name.length > 38 ? st.name.slice(0, 38) + '…' : st.name}
+                      </text>
+                    </g>
+                  );
+                });
+                const totalH = 36 + prog.steps.length * 26 + 16;
+                currentY += totalH;
+                return (
+                  <g key={`prog-${pi}`}>
+                    <line x1={cx + 130} y1={cyNode + 18} x2={svgW - 400} y2={progY} stroke="#8b5cf640" strokeWidth={1} />
+                    <rect x={svgW - 420} y={progY - 16} width={390} height={32} rx={6} fill="#1a2332" stroke="#8b5cf670" strokeWidth={1.5} />
+                    <text x={svgW - 410} y={progY + 5} fill="#8b5cf6" fontSize="13" fontWeight="bold" fontFamily="sans-serif">
+                      ⚡ Программа {pi + 1}: {prog.name.length > 30 ? prog.name.slice(0, 30) + '…' : prog.name}
+                    </text>
+                    {stepNodes}
+                  </g>
+                );
+              });
+            })()}
+          </svg>
         </div>
       </div>
     </div>
   );
-}
-
-function drawRoundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number, fill: string, stroke: string) {
-  ctx.beginPath();
-  ctx.roundRect(x, y, w, h, r);
-  ctx.fillStyle = fill;
-  ctx.fill();
-  ctx.strokeStyle = stroke;
-  ctx.lineWidth = 1;
-  ctx.stroke();
 }
 
 function escSvg(s: string) {
