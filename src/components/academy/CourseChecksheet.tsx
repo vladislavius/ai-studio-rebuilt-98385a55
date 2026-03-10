@@ -337,6 +337,46 @@ export function CourseChecksheet({ courseId, onBack }: Props) {
         </button>
       </div>
 
+      {/* Version history */}
+      {showHistory && (
+        <div className="bg-card border border-border rounded-xl p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-display font-bold text-foreground flex items-center gap-2">
+              <History size={16} /> История версий
+            </h3>
+            <button onClick={() => setShowHistory(false)} className="text-xs text-muted-foreground hover:text-foreground">Закрыть</button>
+          </div>
+          {(!versions || versions.length === 0) ? (
+            <p className="text-xs text-muted-foreground font-body text-center py-4">Нет сохранённых версий. Версия создаётся автоматически при каждом сохранении.</p>
+          ) : (
+            <div className="space-y-2 max-h-80 overflow-y-auto">
+              {versions.map(v => {
+                const sectionCount = Array.isArray(v.sections) ? (v.sections as any[]).length : 0;
+                return (
+                  <div key={v.id} className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
+                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-display font-bold text-primary">
+                      v{v.version_number}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-display font-semibold text-foreground">{v.title}</p>
+                      <p className="text-[10px] text-muted-foreground">
+                        {sectionCount} пунктов • {new Date(v.created_at).toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => { if (confirm(`Восстановить версию ${v.version_number}? Текущие изменения будут потеряны.`)) restoreVersionMut.mutate(v.id); }}
+                      className="px-2 py-1 border border-border rounded text-[10px] font-display font-bold text-muted-foreground hover:bg-accent flex items-center gap-1"
+                    >
+                      <RotateCcw size={10} /> Откатить
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Course meta */}
       <div className="bg-card border border-border rounded-xl p-4 space-y-3">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
