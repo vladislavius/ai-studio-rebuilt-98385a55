@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Plus, Edit3, Trash2, Eye, ChevronRight, ChevronDown, Save, BookOpen, Download, Upload } from 'lucide-react';
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { Plus, Trash2, Eye, ChevronRight, ChevronDown, BookOpen, Download, Upload, FileText, Map } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { CyberneticCard } from '@/components/ui/cybernetic-card';
@@ -18,12 +18,13 @@ const STEP_TYPE_COLORS: Record<string, string> = {
 };
 
 export function AdminScalePage() {
-  const { scales, currentScale, currentId, setCurrentId, loading, createScale, deleteScale, updateScale } = useAdminScales();
+  const { scales, currentScale, currentId, setCurrentId, loading, createScale, addFullScale, deleteScale, updateScale } = useAdminScales();
   const [view, setView] = useState<ASView>('dashboard');
   const [newName, setNewName] = useState('');
   const [showNewModal, setShowNewModal] = useState(false);
   const [expandedLevels, setExpandedLevels] = useState<Record<string, boolean>>({});
   const [refOpen, setRefOpen] = useState(false);
+  const [mindmapOpen, setMindmapOpen] = useState(false);
 
   const toggleLevel = (key: string) => setExpandedLevels(prev => ({ ...prev, [key]: !prev[key] }));
 
@@ -38,28 +39,12 @@ export function AdminScalePage() {
     toast.success('Шкала создана');
   };
 
-  const loadTemplate = (tpl: string) => {
-    let s: AdminScale;
-    if (tpl === 'wife') s = buildWifeTemplate();
-    else if (tpl === 'marketing') s = buildMarketingTemplate();
-    else return;
-    updateScale(s.id, () => s);
-    // Actually we need to add it
-    createScale(s.name);
-    // Overwrite with template data
-    const created = scales[scales.length]; // won't work, let's just use a different approach
-  };
-
   const handleLoadTemplate = (builder: () => AdminScale) => {
+    if (!confirm('Загрузить шаблон? Будет создана новая шкала.')) return;
     const s = builder();
-    // We need to add to scales directly  
-    createScale(s.name);
-    // Then update the latest one with template data
-    setTimeout(() => {
-      updateScale(scales[scales.length - 1]?.id ?? '', () => s);
-      setView('editor');
-      toast.success('Шаблон загружен');
-    }, 100);
+    addFullScale(s);
+    setView('editor');
+    toast.success('Шаблон загружен');
   };
 
   const exportJSON = () => {
@@ -72,6 +57,111 @@ export function AdminScalePage() {
     toast.success('JSON экспортирован');
   };
 
+  const exportWord = async () => {
+    if (!currentScale) return;
+    try {
+      const docx = await import('docx');
+      const { saveAs } = await import('file-saver');
+
+      const makePara = (text: string, opts?: { bold?: boolean; italic?: boolean; heading?: any; spacing?: any }) => {
+        return new docx.Paragraph({
+          heading: opts?.heading,
+          spacing: opts?.spacing,
+          children: [new docx.TextRun({ text, bold: opts?.bold, italics: opts?.italic })],
+        });
+      };
+
+      const makeCell = (text: string, opts?: { bold?: boolean; width?: number }) => {
+        return new docx.TableCell({
+          width: opts?.width ? { size: opts.width, type: docx.WidthType.PERCENTAGE } : undefined,
+          children: [new docx.Paragraph({ children: [new docx.TextRun({ text, bold: opts?.bold })] })],
+        });
+      };
+
+      const levelRows = [
+        { n: 1, title: 'Цель', value: currentScale.goal },
+        { n: 2, title: 'Замыслы', value: currentScale.purpose },
+        { n: 3, title: 'Политика', value: currentScale.policy },
+        { n: 4, title: 'План', value: currentScale.plan },
+        { n: 8, title: 'Идеальная картина', value: currentScale.ideal },
+        { n: 9, title: 'Статистики', value: currentScale.stats },
+        { n: 10, title: 'ЦКП', value: currentScale.vfp },
+      ].filter(l => l.value);
+
+      const levelTable = new docx.Table({
+        width: { size: 100, type: docx.WidthType.PERCENTAGE },
+        rows: [
+          new docx.TableRow({
+            tableHeader: true,
+            children: [makeCell('Уровень', { bold: true, width: 25 }), makeCell('Содержание', { bold: true, width: 75 })],
+          }),
+          ...levelRows.map(l => new docx.TableRow({
+            children: [makeCell(`${l.n}. ${l.title}`), makeCell(l.value)],
+          })),
+        ],
+      });
+
+      const programChildren: (InstanceType<typeof docx.Paragraph> | InstanceType<typeof docx.Table>)[] = [];
+      currentScale.programs.forEach((prog, pi) => {
+        programChildren.push(makePara(`Программа ${pi + 1}: ${prog.name}`, { bold: true, heading: docx.HeadingLevel.HEADING_2, spacing: { before: 400 } }));
+        if (prog.mainTask) {
+          programChildren.push(makePara(`Главная задача: ${prog.mainTask}`, { italic: true, spacing: { after: 200 } }));
+        }
+
+        const stepTable = new docx.Table({
+          width: { size: 100, type: docx.WidthType.PERCENTAGE },
+          rows: [
+            new docx.TableRow({
+              tableHeader: true,
+              children: [
+                makeCell('№', { bold: true, width: 5 }),
+                makeCell('Тип', { bold: true, width: 15 }),
+                makeCell('Задача', { bold: true, width: 30 }),
+                makeCell('Ответственный', { bold: true, width: 15 }),
+                makeCell('Дедлайн', { bold: true, width: 10 }),
+                makeCell('Статус', { bold: true, width: 10 }),
+                makeCell('Примечания', { bold: true, width: 15 }),
+              ],
+            }),
+            ...prog.steps.map((st, si) => new docx.TableRow({
+              children: [
+                makeCell(`${si + 1}`),
+                makeCell(`${STEP_TYPES[st.type].label}`),
+                makeCell(st.name),
+                makeCell(st.responsible || ''),
+                makeCell(st.deadline || ''),
+                makeCell(st.done ? '✅' : '○'),
+                makeCell(st.notes || ''),
+              ],
+            })),
+          ],
+        });
+        programChildren.push(stepTable);
+      });
+
+      const doc = new docx.Document({
+        sections: [{
+          properties: {},
+          children: [
+            makePara(currentScale.name, { bold: true, heading: docx.HeadingLevel.TITLE }),
+            makePara(`Дата создания: ${new Date(currentScale.created).toLocaleDateString('ru-RU')}`, { spacing: { after: 300 } }),
+            makePara('Административная шкала', { bold: true, heading: docx.HeadingLevel.HEADING_1, spacing: { before: 200 } }),
+            levelTable,
+            makePara('Программы и задачи', { bold: true, heading: docx.HeadingLevel.HEADING_1, spacing: { before: 400 } }),
+            ...programChildren,
+          ],
+        }],
+      });
+
+      const blob = await docx.Packer.toBlob(doc);
+      saveAs(blob, `${currentScale.name}.docx`);
+      toast.success('Word документ экспортирован');
+    } catch (e) {
+      console.error(e);
+      toast.error('Ошибка экспорта Word');
+    }
+  };
+
   const importJSON = () => {
     const input = document.createElement('input');
     input.type = 'file'; input.accept = '.json';
@@ -82,11 +172,8 @@ export function AdminScalePage() {
       try {
         const data = JSON.parse(text) as AdminScale;
         data.id = Date.now().toString(36) + Math.random().toString(36).slice(2);
-        createScale(data.name);
-        setTimeout(() => {
-          updateScale(data.id, () => data);
-          toast.success('Шкала импортирована');
-        }, 100);
+        addFullScale(data);
+        toast.success('Шкала импортирована');
       } catch { toast.error('Ошибка импорта'); }
     };
     input.click();
@@ -102,7 +189,7 @@ export function AdminScalePage() {
           <h1 className="text-2xl md:text-3xl font-display font-bold text-foreground">Административная Шкала</h1>
           <p className="text-sm text-muted-foreground font-body">10-уровневая шкала: от Цели до ЦКП</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           {view !== 'dashboard' && (
             <Button variant="outline" size="sm" onClick={() => setView('dashboard')}>
               ← Назад
@@ -115,6 +202,12 @@ export function AdminScalePage() {
               </Button>
               <Button variant="outline" size="sm" onClick={() => setRefOpen(!refOpen)}>
                 <BookOpen size={14} className="mr-1" /> Справочник
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => setMindmapOpen(true)}>
+                <Map size={14} className="mr-1" /> Mind-карта
+              </Button>
+              <Button variant="outline" size="sm" onClick={exportWord}>
+                <FileText size={14} className="mr-1" /> Word
               </Button>
               <Button variant="outline" size="sm" onClick={exportJSON}>
                 <Download size={14} className="mr-1" /> JSON
@@ -152,6 +245,9 @@ export function AdminScalePage() {
       {/* Reference Panel */}
       {refOpen && <ReferencePanel onClose={() => setRefOpen(false)} />}
 
+      {/* Mind Map */}
+      {mindmapOpen && currentScale && <MindMapModal scale={currentScale} onClose={() => setMindmapOpen(false)} />}
+
       {/* Views */}
       {view === 'dashboard' && (
         <DashboardView
@@ -160,12 +256,7 @@ export function AdminScalePage() {
           onDelete={deleteScale}
           onNewScale={() => setShowNewModal(true)}
           onOpenRef={() => setRefOpen(true)}
-          onLoadTemplate={(builder) => {
-            const s = builder();
-            createScale(s.name);
-            setView('editor');
-            toast.success('Шаблон загружен');
-          }}
+          onLoadTemplate={handleLoadTemplate}
         />
       )}
       {view === 'editor' && currentScale && (
@@ -195,7 +286,7 @@ function DashboardView({ scales, onOpen, onDelete, onNewScale, onLoadTemplate, o
     { icon: '📖', title: 'Справочник', desc: 'Полное руководство: структура программ, 5 типов задач, правила проектов. Всё из первоисточника.', color: 'hsl(210, 60%, 50%)', onClick: onOpenRef },
     { icon: '🏢', title: 'Пример: Экскурсии', desc: 'Загрузить готовую программу «Проведение экскурсий по компании» — реальный пример из ПДФ.', color: 'hsl(270, 50%, 50%)', onClick: () => onLoadTemplate(buildExcursionsTemplate) },
     { icon: '🌹', title: 'Пример: Вечер с женой', desc: 'Классический пример из книги: кино, ресторан, прогулка — программа и проект в действии.', color: 'hsl(145, 60%, 40%)', onClick: () => onLoadTemplate(buildWifeTemplate) },
-    { icon: '📈', title: 'Пример: Маркетинговое агентство', desc: 'Полная шкала агентства: увеличить клиентов на 50% через соцсети. Программа + проект + приказы.', color: 'hsl(30, 80%, 50%)', onClick: () => onLoadTemplate(buildMarketingTemplate) },
+    { icon: '📈', title: 'Пример: Маркетинговое агентство', desc: 'Полная шкала агентства: увеличить клиентов на 50% через соцсети. 3 программы + проект.', color: 'hsl(30, 80%, 50%)', onClick: () => onLoadTemplate(buildMarketingTemplate) },
     { icon: '👥', title: 'Пример: ТИПы сотрудников', desc: 'Программа по составлению технических индивидуальных программ для сотрудников.', color: 'hsl(170, 60%, 40%)', onClick: () => onLoadTemplate(buildTIPTemplate) },
   ];
 
@@ -233,7 +324,7 @@ function DashboardView({ scales, onOpen, onDelete, onNewScale, onLoadTemplate, o
       {/* Existing scales */}
       {scales.length > 0 && (
         <div className="space-y-3">
-          <h3 className="text-sm font-display font-bold text-foreground uppercase tracking-wider">Мои шкалы</h3>
+          <h3 className="text-sm font-display font-bold text-foreground uppercase tracking-wider">Мои шкалы · <span className="text-muted-foreground">Открыть</span></h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {scales.map(s => {
               const steps = s.programs.flatMap(p => p.steps);
@@ -255,7 +346,7 @@ function DashboardView({ scales, onOpen, onDelete, onNewScale, onLoadTemplate, o
                   <div className="h-1 bg-muted rounded-full overflow-hidden">
                     <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${pct}%` }} />
                   </div>
-                  <p className="text-[10px] text-muted-foreground font-display mt-1">{pct}% выполнено</p>
+                  <p className="text-[10px] text-muted-foreground font-display mt-1">{pct}% шагов выполнено</p>
                 </CyberneticCard>
               );
             })}
@@ -446,12 +537,12 @@ function ProgramBlock({ program, index, scale, onUpdate }: {
 
         {/* Alert */}
         <div className="bg-primary/5 border border-primary/20 rounded-lg p-2 text-[11px] text-primary font-body">
-          <strong>Правило:</strong> Сначала Первоочередные → Жизненно важные → Условные → Текущие → Производственные.
+          <strong>Правило:</strong> Шаги ниже — это и есть задачи программы. Сначала добавляйте <strong>Первоочередные</strong>, потом <strong>Жизненно важные</strong> и <strong>Условные</strong>, затем <strong>Текущие</strong> и в конце — <strong>Производственные</strong>.
         </div>
 
         {/* Steps header */}
         <div className="flex items-center justify-between flex-wrap gap-2">
-          <p className="text-[10px] font-display font-bold text-secondary tracking-widest">📌 ШАГИ ПРОГРАММЫ (задачи)</p>
+          <p className="text-[10px] font-display font-bold text-secondary tracking-widest">📌 ШАГИ ПРОГРАММЫ (ЗАДАЧИ)</p>
           <div className="flex items-center gap-2">
             <select value={newType} onChange={e => setNewType(e.target.value as AdminScaleStep['type'])}
               className="bg-accent border border-border rounded px-2 py-1 text-[11px] font-body text-foreground focus:outline-none">
@@ -460,7 +551,7 @@ function ProgramBlock({ program, index, scale, onUpdate }: {
               ))}
             </select>
             <Button size="sm" variant="outline" onClick={addStep} className="text-xs">
-              <Plus size={12} className="mr-1" /> Задача
+              <Plus size={12} className="mr-1" /> Задача (шаг)
             </Button>
           </div>
         </div>
@@ -721,6 +812,218 @@ function ReviewView({ scale }: { scale: AdminScale }) {
       )}
     </div>
   );
+}
+
+// ─── Mind Map Modal ───
+function MindMapModal({ scale, onClose }: { scale: AdminScale; onClose: () => void }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  const exportSVG = useCallback(() => {
+    // Build SVG mind-map
+    const levels = [
+      { label: '🎯 Цель', text: scale.goal, color: '#c9a84c' },
+      { label: '💡 Замыслы', text: scale.purpose, color: '#d4a843' },
+      { label: '📜 Политика', text: scale.policy, color: '#8a9bb5' },
+      { label: '🗺 План', text: scale.plan, color: '#2980b9' },
+      { label: '🌟 Идеальная картина', text: scale.ideal, color: '#8a9bb5' },
+      { label: '📈 Статистики', text: scale.stats, color: '#27ae60' },
+      { label: '🏆 ЦКП', text: scale.vfp, color: '#e67e22' },
+    ].filter(l => l.text);
+
+    const programs = scale.programs;
+    const totalNodes = levels.length + programs.length + programs.reduce((s, p) => s + p.steps.length, 0);
+    const svgH = Math.max(600, totalNodes * 35 + 200);
+    const svgW = 1200;
+
+    let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${svgW}" height="${svgH}" style="background:#0f1419;font-family:sans-serif">`;
+
+    // Title
+    svg += `<text x="${svgW / 2}" y="40" fill="#c9a84c" font-size="20" font-weight="bold" text-anchor="middle">${escSvg(scale.name)}</text>`;
+
+    // Central node
+    const cx = svgW / 2, cy = 80;
+    svg += `<rect x="${cx - 100}" y="${cy - 15}" width="200" height="30" rx="6" fill="#1a2332" stroke="#c9a84c"/>`;
+    svg += `<text x="${cx}" y="${cy + 5}" fill="#c9a84c" font-size="12" font-weight="bold" text-anchor="middle">Административная Шкала</text>`;
+
+    // Left branch: levels
+    let ly = 130;
+    levels.forEach(l => {
+      svg += `<line x1="${cx}" y1="${cy + 15}" x2="200" y2="${ly}" stroke="${l.color}40" stroke-width="1"/>`;
+      svg += `<rect x="30" y="${ly - 12}" width="340" height="24" rx="4" fill="#1a2332" stroke="${l.color}60"/>`;
+      svg += `<text x="40" y="${ly + 4}" fill="${l.color}" font-size="11" font-weight="bold">${escSvg(l.label)}</text>`;
+      const truncated = l.text.length > 35 ? l.text.slice(0, 35) + '…' : l.text;
+      svg += `<text x="170" y="${ly + 4}" fill="#8a9bb5" font-size="10">${escSvg(truncated)}</text>`;
+      ly += 32;
+    });
+
+    // Right branch: programs
+    let py = 130;
+    programs.forEach((prog, pi) => {
+      svg += `<line x1="${cx}" y1="${cy + 15}" x2="${svgW - 200}" y2="${py}" stroke="#8b5cf640" stroke-width="1"/>`;
+      svg += `<rect x="${svgW - 370}" y="${py - 12}" width="340" height="24" rx="4" fill="#1a2332" stroke="#8b5cf660"/>`;
+      svg += `<text x="${svgW - 360}" y="${py + 4}" fill="#8b5cf6" font-size="11" font-weight="bold">⚡ Программа ${pi + 1}: ${escSvg(prog.name.slice(0, 25))}</text>`;
+      py += 30;
+
+      prog.steps.forEach((st, si) => {
+        const stColor = STEP_TYPE_COLORS[st.type]?.replace('hsl(', '').replace(')', '') || '';
+        svg += `<line x1="${svgW - 200}" y1="${py - 20}" x2="${svgW - 150}" y2="${py}" stroke="#ffffff10" stroke-width="1"/>`;
+        svg += `<rect x="${svgW - 340}" y="${py - 10}" width="310" height="20" rx="3" fill="#0f1419" stroke="#ffffff15"/>`;
+        const truncName = st.name.length > 30 ? st.name.slice(0, 30) + '…' : st.name;
+        svg += `<text x="${svgW - 330}" y="${py + 4}" fill="#8a9bb5" font-size="9">${si + 1}. ${escSvg(truncName)}</text>`;
+        py += 22;
+      });
+      py += 10;
+    });
+
+    const finalH = Math.max(svgH, ly + 50, py + 50);
+    svg = svg.replace(`height="${svgH}"`, `height="${finalH}"`);
+    svg += '</svg>';
+
+    const blob = new Blob([svg], { type: 'image/svg+xml' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${scale.name}_mindmap.svg`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success('Mind-карта экспортирована как SVG');
+  }, [scale]);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const dpr = window.devicePixelRatio || 1;
+    const w = canvas.clientWidth;
+    const h = canvas.clientHeight;
+    canvas.width = w * dpr;
+    canvas.height = h * dpr;
+    ctx.scale(dpr, dpr);
+
+    // Background
+    ctx.fillStyle = '#0f1419';
+    ctx.fillRect(0, 0, w, h);
+
+    // Title
+    ctx.fillStyle = '#c9a84c';
+    ctx.font = 'bold 16px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(scale.name, w / 2, 30);
+
+    // Central node
+    const cx = w / 2, cy = 60;
+    drawRoundRect(ctx, cx - 80, cy - 14, 160, 28, 6, '#1a2332', '#c9a84c');
+    ctx.fillStyle = '#c9a84c';
+    ctx.font = 'bold 11px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('Административная Шкала', cx, cy + 4);
+
+    // Levels (left side)
+    const levelData = [
+      { label: '🎯 Цель', text: scale.goal, color: '#c9a84c' },
+      { label: '💡 Замыслы', text: scale.purpose, color: '#d4a843' },
+      { label: '📜 Политика', text: scale.policy, color: '#8a9bb5' },
+      { label: '🗺 План', text: scale.plan, color: '#2980b9' },
+      { label: '🌟 Идеальная', text: scale.ideal, color: '#8a9bb5' },
+      { label: '📈 Статистики', text: scale.stats, color: '#27ae60' },
+      { label: '🏆 ЦКП', text: scale.vfp, color: '#e67e22' },
+    ].filter(l => l.text);
+
+    let ly = 100;
+    levelData.forEach(l => {
+      ctx.strokeStyle = l.color + '40';
+      ctx.beginPath();
+      ctx.moveTo(cx, cy + 14);
+      ctx.lineTo(160, ly);
+      ctx.stroke();
+
+      drawRoundRect(ctx, 20, ly - 12, 280, 24, 4, '#1a2332', l.color + '60');
+      ctx.fillStyle = l.color;
+      ctx.font = 'bold 10px sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText(l.label, 30, ly + 4);
+      ctx.fillStyle = '#8a9bb5';
+      ctx.font = '9px sans-serif';
+      const truncated = l.text.length > 25 ? l.text.slice(0, 25) + '…' : l.text;
+      ctx.fillText(truncated, 130, ly + 4);
+      ly += 30;
+    });
+
+    // Programs (right side)
+    let py = 100;
+    scale.programs.forEach((prog, pi) => {
+      ctx.strokeStyle = '#8b5cf640';
+      ctx.beginPath();
+      ctx.moveTo(cx, cy + 14);
+      ctx.lineTo(w - 160, py);
+      ctx.stroke();
+
+      drawRoundRect(ctx, w - 310, py - 12, 290, 24, 4, '#1a2332', '#8b5cf660');
+      ctx.fillStyle = '#8b5cf6';
+      ctx.font = 'bold 10px sans-serif';
+      ctx.textAlign = 'left';
+      const progLabel = `⚡ П${pi + 1}: ${prog.name.slice(0, 22)}`;
+      ctx.fillText(progLabel, w - 300, py + 4);
+      py += 28;
+
+      prog.steps.slice(0, 8).forEach((st, si) => {
+        ctx.strokeStyle = '#ffffff10';
+        ctx.beginPath();
+        ctx.moveTo(w - 165, py - 18);
+        ctx.lineTo(w - 140, py);
+        ctx.stroke();
+
+        drawRoundRect(ctx, w - 290, py - 10, 270, 20, 3, '#0f1419', '#ffffff15');
+        ctx.fillStyle = st.done ? '#27ae60' : '#8a9bb5';
+        ctx.font = '9px sans-serif';
+        const truncName = st.name.length > 28 ? st.name.slice(0, 28) + '…' : st.name;
+        ctx.fillText(`${si + 1}. ${truncName}`, w - 280, py + 3);
+        py += 22;
+      });
+      if (prog.steps.length > 8) {
+        ctx.fillStyle = '#8a9bb580';
+        ctx.font = '9px sans-serif';
+        ctx.fillText(`... ещё ${prog.steps.length - 8} задач`, w - 280, py + 3);
+        py += 22;
+      }
+      py += 8;
+    });
+  }, [scale]);
+
+  return (
+    <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="bg-card border border-border rounded-xl w-full max-w-5xl h-[80vh] flex flex-col" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between p-4 border-b border-border">
+          <h3 className="font-display font-bold text-foreground">🧠 Mind-карта: {scale.name}</h3>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={exportSVG}>
+              <Download size={14} className="mr-1" /> SVG
+            </Button>
+            <button onClick={onClose} className="text-muted-foreground hover:text-foreground text-lg px-2">✕</button>
+          </div>
+        </div>
+        <div className="flex-1 overflow-auto p-2">
+          <canvas ref={canvasRef} className="w-full h-full rounded-lg" style={{ minHeight: 500 }} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function drawRoundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number, fill: string, stroke: string) {
+  ctx.beginPath();
+  ctx.roundRect(x, y, w, h, r);
+  ctx.fillStyle = fill;
+  ctx.fill();
+  ctx.strokeStyle = stroke;
+  ctx.lineWidth = 1;
+  ctx.stroke();
+}
+
+function escSvg(s: string) {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
 // ─── Reference Panel ───
