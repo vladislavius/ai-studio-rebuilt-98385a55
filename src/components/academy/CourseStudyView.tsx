@@ -50,6 +50,8 @@ export function CourseStudyView({ courseId, onBack, employeeId }: Props) {
   const [activeIdx, setActiveIdx] = useState(0);
   const [completedIds, setCompletedIds] = useState<string[]>([]);
   const [showWordClearing, setShowWordClearing] = useState(false);
+  const [studentAnswers, setStudentAnswers] = useState<Record<string, string>>({});
+  const [answerSaving, setAnswerSaving] = useState(false);
 
   const { data: course } = useQuery({
     queryKey: ['course', courseId],
