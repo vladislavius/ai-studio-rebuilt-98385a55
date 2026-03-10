@@ -1,12 +1,16 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { UserPlus, Trash2, Users } from 'lucide-react';
+import { UserPlus, Trash2, Users, Plus } from 'lucide-react';
 import { toast } from 'sonner';
+import { useAuth } from '@/hooks/useAuth';
 
 export function SupervisorAssignment() {
+  const { user } = useAuth();
   const qc = useQueryClient();
   const [selectedCourse, setSelectedCourse] = useState<string>('');
+  const [enrollForm, setEnrollForm] = useState({ employeeId: '', supervisorUserId: '' });
+  const [showEnrollForm, setShowEnrollForm] = useState(false);
 
   const { data: courses } = useQuery({
     queryKey: ['courses'],
@@ -53,15 +57,6 @@ export function SupervisorAssignment() {
     },
   });
 
-  const { data: progress } = useQuery({
-    queryKey: ['all-course-progress'],
-    queryFn: async () => {
-      const { data, error } = await supabase.from('course_progress').select('course_id, employee_id');
-      if (error) throw error;
-      return data;
-    },
-  });
-
   const assignMut = useMutation({
     mutationFn: async ({ courseId, employeeId, supervisorUserId }: { courseId: string; employeeId: string; supervisorUserId: string }) => {
       const { error } = await supabase.from('course_supervisors').upsert({
@@ -74,6 +69,24 @@ export function SupervisorAssignment() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['course-supervisors'] });
       toast.success('Супервизор назначен');
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const enrollMut = useMutation({
+    mutationFn: async ({ courseId, employeeId, supervisorUserId }: { courseId: string; employeeId: string; supervisorUserId: string }) => {
+      const { error } = await supabase.from('course_supervisors').upsert({
+        course_id: courseId,
+        employee_id: employeeId,
+        supervisor_user_id: supervisorUserId,
+      }, { onConflict: 'course_id,employee_id' });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['course-supervisors'] });
+      toast.success('Студент зачислен на курс');
+      setShowEnrollForm(false);
+      setEnrollForm({ employeeId: '', supervisorUserId: '' });
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -98,16 +111,74 @@ export function SupervisorAssignment() {
   }) || [];
 
   const courseAssignments = assignments?.filter(a => !selectedCourse || a.course_id === selectedCourse) || [];
-  const courseStudents = selectedCourse
-    ? progress?.filter(p => p.course_id === selectedCourse).map(p => p.employee_id) || []
-    : [];
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2">
-        <Users size={16} className="text-primary" />
-        <h3 className="text-sm font-display font-bold text-foreground">Назначение супервизоров</h3>
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <div className="flex items-center gap-2">
+          <Users size={16} className="text-primary" />
+          <h3 className="text-sm font-display font-bold text-foreground">Назначение супервизоров и зачисление</h3>
+        </div>
+        <button
+          onClick={() => setShowEnrollForm(!showEnrollForm)}
+          className="px-3 py-1.5 bg-primary text-primary-foreground rounded-lg text-xs font-display font-bold flex items-center gap-1.5"
+        >
+          <Plus size={12} /> Зачислить студента
+        </button>
       </div>
+
+      {showEnrollForm && (
+        <div className="bg-card border border-primary/20 rounded-xl p-4 space-y-3">
+          <p className="text-xs font-display font-bold text-foreground">Зачислить студента на курс</p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <label className="text-[10px] font-display font-bold text-muted-foreground uppercase block mb-1">Курс *</label>
+              <select
+                value={selectedCourse}
+                onChange={e => setSelectedCourse(e.target.value)}
+                className="w-full px-3 py-2 bg-background border border-border rounded-lg text-xs font-body text-foreground focus:outline-none"
+              >
+                <option value="">Выберите курс...</option>
+                {courses?.map(c => <option key={c.id} value={c.id}>{c.title}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="text-[10px] font-display font-bold text-muted-foreground uppercase block mb-1">Студент *</label>
+              <select
+                value={enrollForm.employeeId}
+                onChange={e => setEnrollForm(p => ({ ...p, employeeId: e.target.value }))}
+                className="w-full px-3 py-2 bg-background border border-border rounded-lg text-xs font-body text-foreground focus:outline-none"
+              >
+                <option value="">Выберите сотрудника...</option>
+                {employees?.map(e => <option key={e.id} value={e.id}>{e.full_name}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="text-[10px] font-display font-bold text-muted-foreground uppercase block mb-1">Супервизор *</label>
+              <select
+                value={enrollForm.supervisorUserId}
+                onChange={e => setEnrollForm(p => ({ ...p, supervisorUserId: e.target.value }))}
+                className="w-full px-3 py-2 bg-background border border-border rounded-lg text-xs font-body text-foreground focus:outline-none"
+              >
+                <option value="">Выберите супервизора...</option>
+                {supervisorUsers.map(s => <option key={s.userId} value={s.userId}>{s.name}</option>)}
+              </select>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => enrollMut.mutate({ courseId: selectedCourse, employeeId: enrollForm.employeeId, supervisorUserId: enrollForm.supervisorUserId })}
+              disabled={!selectedCourse || !enrollForm.employeeId || !enrollForm.supervisorUserId || enrollMut.isPending}
+              className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-xs font-display font-bold disabled:opacity-50"
+            >
+              Зачислить
+            </button>
+            <button onClick={() => setShowEnrollForm(false)} className="px-4 py-2 border border-border rounded-lg text-xs font-display font-bold text-muted-foreground">
+              Отмена
+            </button>
+          </div>
+        </div>
+      )}
 
       <select
         value={selectedCourse}
@@ -141,33 +212,6 @@ export function SupervisorAssignment() {
         );
       })}
 
-      {/* Quick assign */}
-      {selectedCourse && courseStudents.length > 0 && supervisorUsers.length > 0 && (
-        <div className="bg-muted/30 border border-border rounded-xl p-4 space-y-3">
-          <p className="text-[10px] font-display font-bold text-muted-foreground uppercase">Быстрое назначение</p>
-          {courseStudents.map(empId => {
-            const emp = empMap.get(empId);
-            const existing = assignments?.find(a => a.course_id === selectedCourse && a.employee_id === empId);
-            if (existing) return null;
-            return (
-              <div key={empId} className="flex items-center gap-2">
-                <span className="text-xs font-body text-foreground flex-1">{emp?.full_name || '—'}</span>
-                <select
-                  onChange={e => {
-                    if (e.target.value) assignMut.mutate({ courseId: selectedCourse, employeeId: empId, supervisorUserId: e.target.value });
-                    e.target.value = '';
-                  }}
-                  className="h-7 text-[10px] bg-background border border-border rounded px-2"
-                  defaultValue=""
-                >
-                  <option value="" disabled>Назначить...</option>
-                  {supervisorUsers.map(s => <option key={s.userId} value={s.userId}>{s.name}</option>)}
-                </select>
-              </div>
-            );
-          })}
-        </div>
-      )}
     </div>
   );
 }

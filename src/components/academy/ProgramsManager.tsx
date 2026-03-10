@@ -2,9 +2,10 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { Plus, Trash2, Save, GripVertical, Eye, EyeOff, ChevronDown, ChevronUp } from 'lucide-react';
+import { Plus, Trash2, Eye, EyeOff, ChevronDown, ChevronUp, Lock, CheckCircle2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
 
 interface ProgramCourse {
@@ -15,7 +16,7 @@ interface ProgramCourse {
 }
 
 export function ProgramsManager() {
-  const { isAdmin } = useAuth();
+  const { isAdmin, user } = useAuth();
   const qc = useQueryClient();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState({ title: '', description: '' });
@@ -109,6 +110,20 @@ export function ProgramsManager() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  // My progress (for prerequisite display)
+  const { data: myProgress } = useQuery({
+    queryKey: ['my-progress-all-programs', user?.email],
+    queryFn: async () => {
+      if (!user?.email) return [];
+      const { data: emp } = await supabase.from('employees').select('id').eq('email', user.email).maybeSingle();
+      if (!emp?.id) return [];
+      const { data } = await supabase.from('course_progress').select('course_id, progress_percent, completed_at').eq('employee_id', emp.id);
+      return data ?? [];
+    },
+    enabled: !!user?.email,
+  });
+
+  const completedCourseIds = new Set((myProgress ?? []).filter(p => p.completed_at).map(p => p.course_id));
   const courseMap = new Map(courses?.map(c => [c.id, c.title]) || []);
 
   if (isLoading) return <div className="text-center py-8 text-muted-foreground text-sm">Загрузка...</div>;
@@ -177,20 +192,36 @@ export function ProgramsManager() {
               <div className="border-t border-border p-4 space-y-2 bg-muted/20">
                 <p className="text-[10px] font-display font-bold text-muted-foreground uppercase">Курсы в программе</p>
                 {progCourses.length === 0 && <p className="text-xs text-muted-foreground font-body">Нет курсов</p>}
-                {progCourses.map((pc, idx) => (
-                  <div key={pc.id} className="flex items-center gap-2 p-2 bg-background rounded-lg">
-                    <span className="text-xs font-display font-bold text-muted-foreground w-6">{idx + 1}.</span>
-                    <span className="flex-1 text-xs font-body text-foreground">{courseMap.get(pc.course_id) || '—'}</span>
-                    <span className={`text-[10px] px-1.5 py-0.5 rounded ${pc.is_required ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}>
-                      {pc.is_required ? 'Обязат.' : 'Доп.'}
-                    </span>
-                    {isAdmin && (
-                      <button onClick={() => removeCourseMut.mutate(pc.id)} className="p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive">
-                        <Trash2 size={12} />
-                      </button>
-                    )}
-                  </div>
-                ))}
+                {progCourses.map((pc, idx) => {
+                  const isDone = completedCourseIds.has(pc.course_id);
+                  const prevDone = idx === 0 || completedCourseIds.has(progCourses[idx - 1].course_id);
+                  const isLocked = !isAdmin && !isDone && !prevDone;
+                  const prog = myProgress?.find(p => p.course_id === pc.course_id);
+                  return (
+                    <div key={pc.id} className={`flex items-center gap-2 p-2 rounded-lg border ${isLocked ? 'bg-muted/30 border-border opacity-60' : isDone ? 'bg-primary/5 border-primary/20' : 'bg-background border-border'}`}>
+                      <span className="text-xs font-display font-bold text-muted-foreground w-6">{idx + 1}.</span>
+                      <div className="flex-1 min-w-0">
+                        <span className="text-xs font-body text-foreground truncate block">{courseMap.get(pc.course_id) || '—'}</span>
+                        {prog && !isDone && (
+                          <div className="flex items-center gap-1 mt-0.5">
+                            <Progress value={prog.progress_percent || 0} className="h-1 flex-1" />
+                            <span className="text-[9px] text-muted-foreground">{prog.progress_percent || 0}%</span>
+                          </div>
+                        )}
+                      </div>
+                      {isDone ? (
+                        <CheckCircle2 size={14} className="text-primary shrink-0" />
+                      ) : isLocked ? (
+                        <Lock size={12} className="text-muted-foreground shrink-0" />
+                      ) : null}
+                      {isAdmin && (
+                        <button onClick={() => removeCourseMut.mutate(pc.id)} className="p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive shrink-0">
+                          <Trash2 size={12} />
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
                 {isAdmin && availableCourses.length > 0 && (
                   <select
                     onChange={e => { if (e.target.value) addCourseMut.mutate({ programId: prog.id, courseId: e.target.value }); e.target.value = ''; }}

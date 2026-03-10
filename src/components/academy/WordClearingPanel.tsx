@@ -11,6 +11,7 @@ interface Props {
   employeeId: string;
   stepId: string;
   onClose: () => void;
+  onWordChanged?: () => void;
 }
 
 interface GlossaryTerm {
@@ -29,7 +30,7 @@ interface ClearingLog {
   student_example: string | null;
 }
 
-export function WordClearingPanel({ courseId, employeeId, stepId, onClose }: Props) {
+export function WordClearingPanel({ courseId, employeeId, stepId, onClose, onWordChanged }: Props) {
   const qc = useQueryClient();
   const [search, setSearch] = useState('');
   const [customTerm, setCustomTerm] = useState('');
@@ -71,6 +72,7 @@ export function WordClearingPanel({ courseId, employeeId, stepId, onClose }: Pro
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['word-clearing-logs', courseId, employeeId, stepId] });
+      onWordChanged?.();
       setCustomTerm('');
     },
     onError: (e: Error) => toast.error(e.message),
@@ -88,6 +90,7 @@ export function WordClearingPanel({ courseId, employeeId, stepId, onClose }: Pro
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['word-clearing-logs', courseId, employeeId, stepId] });
+      onWordChanged?.();
       setExpandedLog(null);
       setStudentDef('');
       setStudentExample('');

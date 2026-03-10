@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Upload, FileText, Trash2, Download, Loader2 } from 'lucide-react';
@@ -8,14 +8,15 @@ interface Props {
   courseId: string;
   employeeId: string;
   stepId: string;
+  onHasArtifact?: (has: boolean) => void;
 }
 
-export function StepArtifactUpload({ courseId, employeeId, stepId }: Props) {
+export function StepArtifactUpload({ courseId, employeeId, stepId, onHasArtifact }: Props) {
   const qc = useQueryClient();
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
 
-  const { data: artifacts } = useQuery({
+  const { data: artifacts } = useQuery<{ id: string; file_name: string; file_size: number | null; public_url: string | null; storage_path: string }[]>({
     queryKey: ['step-artifacts', courseId, employeeId, stepId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -66,6 +67,10 @@ export function StepArtifactUpload({ courseId, employeeId, stepId }: Props) {
       if (fileRef.current) fileRef.current.value = '';
     }
   };
+
+  useEffect(() => {
+    onHasArtifact?.((artifacts?.length ?? 0) > 0);
+  }, [artifacts?.length]);
 
   const deleteMut = useMutation({
     mutationFn: async (artifact: { id: string; storage_path: string }) => {

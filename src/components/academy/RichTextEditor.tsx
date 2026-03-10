@@ -41,7 +41,11 @@ function ToolbarButton({ onClick, active, children, title }: { onClick: () => vo
 function Toolbar({ editor }: { editor: Editor }) {
   const addImage = () => {
     const url = prompt('URL изображения:');
-    if (url) editor.chain().focus().setImage({ src: url }).run();
+    if (url && /^https?:\/\//i.test(url)) {
+      editor.chain().focus().setImage({ src: url }).run();
+    } else if (url) {
+      alert('Разрешены только URL, начинающиеся с http:// или https://');
+    }
   };
 
   const addTable = () => {

@@ -8,6 +8,12 @@ import { toast } from 'sonner';
 
 type StatusFilter = 'all' | 'not_started' | 'in_progress' | 'completed' | 'certified';
 
+async function getMyEmployeeId(email: string | undefined): Promise<string | null> {
+  if (!email) return null;
+  const { data } = await supabase.from('employees').select('id').eq('email', email).maybeSingle();
+  return data?.id ?? null;
+}
+
 const STATUS_LABELS: Record<StatusFilter, string> = {
   all: 'Все',
   not_started: 'Не начат',
@@ -17,9 +23,17 @@ const STATUS_LABELS: Record<StatusFilter, string> = {
 };
 
 export function ProgressDashboard() {
-  const { isAdmin, isSupervisor } = useAuth();
+  const { isAdmin, isSupervisor, user } = useAuth();
   const qc = useQueryClient();
   const [filter, setFilter] = useState<StatusFilter>('all');
+  const isManager = isAdmin || isSupervisor;
+
+  // For students: find own employee_id to filter progress
+  const { data: myEmployeeId } = useQuery({
+    queryKey: ['my-employee-id', user?.email],
+    queryFn: () => getMyEmployeeId(user?.email),
+    enabled: !!user?.email && !isManager,
+  });
 
   const certifyMut = useMutation({
     mutationFn: async (progressId: string) => {
@@ -34,12 +48,15 @@ export function ProgressDashboard() {
   });
 
   const { data: progress, isLoading } = useQuery({
-    queryKey: ['all-course-progress'],
+    queryKey: ['all-course-progress', isManager ? 'all' : myEmployeeId],
     queryFn: async () => {
-      const { data, error } = await supabase.from('course_progress').select('*');
+      let q = supabase.from('course_progress').select('*');
+      if (!isManager && myEmployeeId) q = q.eq('employee_id', myEmployeeId);
+      const { data, error } = await q;
       if (error) throw error;
       return data;
     },
+    enabled: isManager || !!myEmployeeId,
   });
 
   const { data: courses } = useQuery({
@@ -81,8 +98,21 @@ export function ProgressDashboard() {
     completed: items.filter(p => getStatus(p) === 'completed' || getStatus(p) === 'certified').length,
   };
 
+  if (!isManager && !myEmployeeId && !isLoading) {
+    return (
+      <div className="bg-card border border-border rounded-xl p-12 text-center">
+        <AlertCircle size={32} className="text-muted-foreground/30 mx-auto mb-3" />
+        <p className="text-sm text-muted-foreground font-body">Прогресс недоступен</p>
+        <p className="text-xs text-muted-foreground mt-1">Ваш аккаунт не привязан к карточке сотрудника</p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
+      {!isManager && (
+        <p className="text-sm font-display font-bold text-foreground">Мой прогресс обучения</p>
+      )}
       {/* Stats */}
       <div className="grid grid-cols-3 gap-3">
         <div className="bg-card border border-border rounded-xl p-4">
@@ -124,7 +154,7 @@ export function ProgressDashboard() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border">
-                  <th className="text-left p-3 text-[10px] font-display font-bold text-muted-foreground uppercase">Сотрудник</th>
+                  {isManager && <th className="text-left p-3 text-[10px] font-display font-bold text-muted-foreground uppercase">Сотрудник</th>}
                   <th className="text-left p-3 text-[10px] font-display font-bold text-muted-foreground uppercase">Курс</th>
                   <th className="text-left p-3 text-[10px] font-display font-bold text-muted-foreground uppercase w-40">Прогресс</th>
                   <th className="text-left p-3 text-[10px] font-display font-bold text-muted-foreground uppercase">Статус</th>
@@ -142,10 +172,12 @@ export function ProgressDashboard() {
                   };
                   return (
                     <tr key={p.id} className="border-b border-border/50 hover:bg-accent/30">
-                      <td className="p-3">
-                        <p className="font-body text-foreground">{emp?.full_name || '—'}</p>
-                        <p className="text-[10px] text-muted-foreground">{emp?.position}</p>
-                      </td>
+                      {isManager && (
+                        <td className="p-3">
+                          <p className="font-body text-foreground">{emp?.full_name || '—'}</p>
+                          <p className="text-[10px] text-muted-foreground">{emp?.position}</p>
+                        </td>
+                      )}
                       <td className="p-3 font-body text-foreground">{courseMap.get(p.course_id) || '—'}</td>
                       <td className="p-3">
                         <div className="flex items-center gap-2">
@@ -158,7 +190,7 @@ export function ProgressDashboard() {
                           <span className={`text-[10px] font-display font-bold uppercase px-2 py-1 rounded ${statusColors[status]}`}>
                             {STATUS_LABELS[status]}
                           </span>
-                          {(isAdmin || isSupervisor) && status === 'completed' && !p.certified && (
+                          {isManager && status === 'completed' && !p.certified && (
                             <button
                               onClick={() => certifyMut.mutate(p.id)}
                               disabled={certifyMut.isPending}

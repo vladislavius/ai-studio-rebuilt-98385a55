@@ -1,29 +1,68 @@
-import { useState, useCallback } from 'react';
+import { useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { ViewMode, EmployeeSubView, DocumentsSubView, ListSubView } from '@/types';
 
+const DEFAULT_VIEW: ViewMode = 'command_center';
+const DEFAULT_EMP_SUB: EmployeeSubView = 'list';
+const DEFAULT_LIST_SUB: ListSubView = 'employees';
+const DEFAULT_DOCS_SUB: DocumentsSubView = 'sent';
+
 export function useNavigation() {
-  const [currentView, setCurrentView] = useState<ViewMode>('command_center');
-  const [employeeSubView, setEmployeeSubView] = useState<EmployeeSubView>('list');
-  const [listSubView, setListSubView] = useState<ListSubView>('employees');
-  const [documentsSubView, setDocumentsSubView] = useState<DocumentsSubView>('sent');
-  const [selectedDept, setSelectedDept] = useState<string | null>(null);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [params, setParams] = useSearchParams();
+
+  const currentView = (params.get('view') as ViewMode) ?? DEFAULT_VIEW;
+  const employeeSubView = (params.get('sub') as EmployeeSubView) ?? DEFAULT_EMP_SUB;
+  const listSubView = (params.get('list_sub') as ListSubView) ?? DEFAULT_LIST_SUB;
+  const documentsSubView = (params.get('docs_sub') as DocumentsSubView) ?? DEFAULT_DOCS_SUB;
+  const selectedDept = params.get('dept') ?? null;
+  const isSidebarCollapsed = params.get('sidebar') === '1';
+  const isMobileMenuOpen = params.get('mobile_menu') === '1';
+
+  const set = useCallback((updates: Record<string, string | null>) => {
+    setParams(prev => {
+      const next = new URLSearchParams(prev);
+      for (const [key, value] of Object.entries(updates)) {
+        if (value === null) {
+          next.delete(key);
+        } else {
+          next.set(key, value);
+        }
+      }
+      return next;
+    });
+  }, [setParams]);
 
   const handleViewChange = useCallback((view: ViewMode) => {
-    setCurrentView(view);
-    setIsMobileMenuOpen(false);
-  }, []);
+    set({ view, mobile_menu: null });
+  }, [set]);
 
   const handleStatisticsView = useCallback((deptId: string | null = null) => {
-    setSelectedDept(deptId);
-    setCurrentView('statistics');
-    setIsMobileMenuOpen(false);
-  }, []);
+    set({ view: 'statistics', dept: deptId, mobile_menu: null });
+  }, [set]);
 
-  const toggleSidebar = useCallback(() => setIsSidebarCollapsed(prev => !prev), []);
-  const toggleMobileMenu = useCallback(() => setIsMobileMenuOpen(prev => !prev), []);
-  const closeMobileMenu = useCallback(() => setIsMobileMenuOpen(false), []);
+  const setEmployeeSubView = useCallback((sub: EmployeeSubView) => {
+    set({ sub });
+  }, [set]);
+
+  const setListSubView = useCallback((list_sub: ListSubView) => {
+    set({ list_sub });
+  }, [set]);
+
+  const setDocumentsSubView = useCallback((docs_sub: DocumentsSubView) => {
+    set({ docs_sub });
+  }, [set]);
+
+  const toggleSidebar = useCallback(() => {
+    set({ sidebar: isSidebarCollapsed ? null : '1' });
+  }, [set, isSidebarCollapsed]);
+
+  const toggleMobileMenu = useCallback(() => {
+    set({ mobile_menu: isMobileMenuOpen ? null : '1' });
+  }, [set, isMobileMenuOpen]);
+
+  const closeMobileMenu = useCallback(() => {
+    set({ mobile_menu: null });
+  }, [set]);
 
   return {
     currentView,

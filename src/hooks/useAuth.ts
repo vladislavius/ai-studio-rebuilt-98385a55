@@ -39,7 +39,7 @@ export function useAuth() {
         setUser(session?.user ?? null);
         setLoading(false);
         if (session?.user) {
-          setTimeout(() => checkRoles(session.user.id), 0);
+          checkRoles(session.user.id);
         } else {
           setIsAdmin(false);
           setIsSupervisor(false);

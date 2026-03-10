@@ -1,30 +1,20 @@
 import { useState } from 'react';
-import { Settings, Database, Bell, Shield, Download, Upload, Users, FileText, Loader2, Type } from 'lucide-react';
+import { Database, Bell, Download, Users, FileText, Type } from 'lucide-react';
 import { useEmployees } from '@/hooks/useEmployees';
 import { useDepartments } from '@/hooks/useDepartments';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
 import { useLabels } from '@/hooks/useLabels';
 import { EditableLabel } from '@/components/ui/editable-label';
 import { TerminologyEditor } from '@/components/settings/TerminologyEditor';
+import { UserRoleManager } from '@/components/settings/UserRoleManager';
 import { toast } from 'sonner';
 
 export function SettingsPage() {
-  const { user } = useAuth();
   const { t } = useLabels();
   const { data: employees } = useEmployees();
   const { data: departments } = useDepartments();
   const [activeSection, setActiveSection] = useState<string | null>(null);
-
-  const { data: userRoles } = useQuery({
-    queryKey: ['all-user-roles'],
-    queryFn: async () => {
-      const { data, error } = await supabase.from('user_roles').select('*');
-      if (error) throw error;
-      return data;
-    },
-  });
 
   const { data: profiles } = useQuery({
     queryKey: ['all-profiles'],
@@ -105,44 +95,13 @@ export function SettingsPage() {
       {/* Users & Roles */}
       {activeSection === 'users' && (
         <div className="bg-card border border-border rounded-xl p-5 space-y-4">
-          <h2 className="font-display font-bold text-foreground">Пользователи системы</h2>
-          {profiles?.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Нет пользователей</p>
-          ) : (
-            <div className="space-y-2">
-              {(profiles ?? []).map(p => {
-                const roles = userRoles?.filter(r => r.user_id === p.user_id) ?? [];
-                const isCurrentUser = p.user_id === user?.id;
-                return (
-                  <div key={p.id} className="flex items-center gap-3 bg-muted/30 border border-border rounded-xl p-3">
-                    <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                      <span className="text-xs font-display font-bold text-primary">
-                        {(p.display_name ?? p.email ?? '?').slice(0, 2).toUpperCase()}
-                      </span>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-display font-semibold text-foreground text-sm truncate">
-                        {p.display_name ?? p.email ?? '—'}
-                        {isCurrentUser && <span className="text-primary text-[10px] ml-2">(вы)</span>}
-                      </p>
-                      <p className="text-xs text-muted-foreground font-body truncate">{p.email}</p>
-                    </div>
-                    <div className="flex gap-1 flex-shrink-0">
-                      {roles.map(r => (
-                        <span key={r.id} className={`text-[10px] px-2 py-0.5 rounded font-display font-bold ${
-                          r.role === 'admin' ? 'bg-primary/10 text-primary' :
-                          r.role === 'moderator' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' :
-                          'bg-muted text-muted-foreground'
-                        }`}>
-                          {r.role === 'admin' ? 'Админ' : r.role === 'moderator' ? 'Модератор' : 'Пользователь'}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
+          <div>
+            <h2 className="font-display font-bold text-foreground">Пользователи системы</h2>
+            <p className="text-xs text-muted-foreground font-body mt-0.5">
+              Назначайте и снимайте роли. Кнопка «Роль» открывает список доступных ролей.
+            </p>
+          </div>
+          <UserRoleManager />
         </div>
       )}
 
