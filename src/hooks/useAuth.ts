@@ -2,23 +2,33 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { Session, User } from '@supabase/supabase-js';
 
+export type AppRole = 'admin' | 'supervisor' | 'author' | 'moderator' | 'user';
+
 export function useAuth() {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isSupervisor, setIsSupervisor] = useState(false);
+  const [isAuthor, setIsAuthor] = useState(false);
+  const [roles, setRoles] = useState<AppRole[]>([]);
 
-  const checkAdminRole = useCallback(async (userId: string) => {
+  const checkRoles = useCallback(async (userId: string) => {
     try {
       const { data } = await supabase
         .from('user_roles')
         .select('role')
-        .eq('user_id', userId)
-        .eq('role', 'admin')
-        .maybeSingle();
-      setIsAdmin(!!data);
+        .eq('user_id', userId);
+      const userRoles = (data?.map(r => r.role) || []) as AppRole[];
+      setRoles(userRoles);
+      setIsAdmin(userRoles.includes('admin'));
+      setIsSupervisor(userRoles.includes('supervisor') || userRoles.includes('admin'));
+      setIsAuthor(userRoles.includes('author') || userRoles.includes('admin'));
     } catch {
       setIsAdmin(false);
+      setIsSupervisor(false);
+      setIsAuthor(false);
+      setRoles([]);
     }
   }, []);
 
@@ -29,9 +39,12 @@ export function useAuth() {
         setUser(session?.user ?? null);
         setLoading(false);
         if (session?.user) {
-          setTimeout(() => checkAdminRole(session.user.id), 0);
+          setTimeout(() => checkRoles(session.user.id), 0);
         } else {
           setIsAdmin(false);
+          setIsSupervisor(false);
+          setIsAuthor(false);
+          setRoles([]);
         }
       }
     );
@@ -41,12 +54,12 @@ export function useAuth() {
       setUser(session?.user ?? null);
       setLoading(false);
       if (session?.user) {
-        checkAdminRole(session.user.id);
+        checkRoles(session.user.id);
       }
     });
 
     return () => subscription.unsubscribe();
-  }, [checkAdminRole]);
+  }, [checkRoles]);
 
   const signIn = useCallback(async (email: string, password: string) => {
     const result = await supabase.auth.signInWithPassword({ email, password });
@@ -67,7 +80,12 @@ export function useAuth() {
     setSession(null);
     setUser(null);
     setIsAdmin(false);
+    setIsSupervisor(false);
+    setIsAuthor(false);
+    setRoles([]);
   }, []);
 
-  return { session, user, loading, isAdmin, signIn, signUp, signOut };
+  const hasRole = useCallback((role: AppRole) => roles.includes(role), [roles]);
+
+  return { session, user, loading, isAdmin, isSupervisor, isAuthor, roles, hasRole, signIn, signUp, signOut };
 }
