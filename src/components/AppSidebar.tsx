@@ -5,6 +5,7 @@ import { MAIN_NAV, STATS_NAV, SETTINGS_NAV, TOOLS_NAV } from '@/constants/naviga
 import { useDepartments } from '@/hooks/useDepartments';
 import { useEmployees } from '@/hooks/useEmployees';
 import { ViewMode } from '@/types';
+import { useTheme } from '@/hooks/useTheme';
 
 interface AppSidebarProps {
   currentView: ViewMode;
