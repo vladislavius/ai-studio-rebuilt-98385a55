@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 
 export function useStatisticDefinitions(ownerType?: string, ownerId?: string) {
   return useQuery({
-    queryKey: ['stat-definitions', ownerType, ownerId],
+    queryKey: ['stat-definitions', ownerType ?? 'all', ownerId ?? 'all'],
     queryFn: async () => {
       let q = supabase.from('statistic_definitions').select('*').order('title');
       if (ownerType) q = q.eq('owner_type', ownerType);
