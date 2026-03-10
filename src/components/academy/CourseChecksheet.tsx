@@ -249,7 +249,7 @@ export function CourseChecksheet({ courseId, onBack }: Props) {
     setItems(newItems);
   };
 
-  const updateItem = (id: string, field: keyof ChecksheetItem, value: string) => {
+  const updateItem = (id: string, field: keyof ChecksheetItem, value: any) => {
     setItems(prev => prev.map(it => it.id === id ? { ...it, [field]: value } : it));
   };
 
