@@ -4,6 +4,7 @@ import { useStatisticDefinitions, useAllStatisticValues, useStatisticValues, use
 import { useUpdateStatDefinition, useDeleteStatDefinition } from '@/hooks/useOrgChartMutations';
 import { useDepartments, DBDepartment } from '@/hooks/useDepartments';
 import { useEmployees } from '@/hooks/useEmployees';
+import { useLabels } from '@/hooks/useLabels';
 import { StatCard } from '@/components/statistics/StatCard';
 import { PERIODS, PeriodType, getFilteredValues, analyzeTrend, calculateCondition, getConditionInfo, CONDITIONS, calculateTrendLine, StatCondition } from '@/utils/statistics';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, AreaChart, Area } from 'recharts';
@@ -29,6 +30,7 @@ function sortDepartments(departments: DBDepartment[]): DBDepartment[] {
 }
 
 export function StatisticsPage({ selectedDeptId }: StatisticsPageProps) {
+  const { t } = useLabels();
   const { data: allDefinitions, isLoading } = useStatisticDefinitions();
   const { data: allValuesMap } = useAllStatisticValues();
   const { data: departments } = useDepartments();
@@ -124,11 +126,11 @@ export function StatisticsPage({ selectedDeptId }: StatisticsPageProps) {
   }, [definitions, selectedDeptId, selectedPeriod, valuesMap]);
 
   const filterButtons = [
-    { id: 'all' as const, label: 'Все', count: stats.total, color: 'bg-primary text-primary-foreground' },
-    { id: 'growing' as const, label: 'Растущие', count: stats.growing, color: 'text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800' },
-    { id: 'declining' as const, label: 'Падающие', count: stats.declining, color: 'text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800' },
-    { id: 'achieved' as const, label: 'Достиг план', count: stats.achieved, color: 'text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800' },
-    { id: 'not_achieved' as const, label: 'Не достиг', count: stats.notAchieved, color: 'text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800' },
+    { id: 'all' as const, label: t('stats.all'), count: stats.total, color: 'bg-primary text-primary-foreground' },
+    { id: 'growing' as const, label: t('stats.growing'), count: stats.growing, color: 'text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800' },
+    { id: 'declining' as const, label: t('stats.declining'), count: stats.declining, color: 'text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800' },
+    { id: 'achieved' as const, label: t('stats.achieved'), count: stats.achieved, color: 'text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800' },
+    { id: 'not_achieved' as const, label: t('stats.not_achieved'), count: stats.notAchieved, color: 'text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800' },
   ];
 
   const shouldRenderStat = (def: typeof definitions[0]) => {
@@ -342,7 +344,7 @@ export function StatisticsPage({ selectedDeptId }: StatisticsPageProps) {
                 </div>
                 <h2 className="text-xs font-display font-bold text-foreground uppercase tracking-tight">{dept.full_name || dept.name}</h2>
               </div>
-              <span className="text-[9px] text-muted-foreground font-display font-bold uppercase">ГЛАВНЫЕ ПОКАЗАТЕЛИ (ГСД)</span>
+              <span className="text-[9px] text-muted-foreground font-display font-bold uppercase">{t('stats.main_indicators')}</span>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
               {visibleStats.map(stat => (
@@ -363,7 +365,7 @@ export function StatisticsPage({ selectedDeptId }: StatisticsPageProps) {
         <div className="space-y-3">
           <div className="flex items-center gap-2 px-1">
             <div className="p-1.5 bg-muted rounded-lg text-muted-foreground"><Layers size={12} /></div>
-            <span className="text-[10px] font-display font-bold text-muted-foreground uppercase tracking-widest">Общие статистики департамента</span>
+             <span className="text-[10px] font-display font-bold text-muted-foreground uppercase tracking-widest">{t('stats.dept_stats')}</span>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
             {deptMainStats.map(stat => (
@@ -403,7 +405,7 @@ export function StatisticsPage({ selectedDeptId }: StatisticsPageProps) {
         <div className="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-2">
           <div className="flex gap-1 bg-muted p-1 rounded-lg w-full md:w-auto">
             <button onClick={() => setDisplayMode('dashboard')} className={`flex-1 md:flex-none px-3 py-2 rounded-md text-xs font-display font-bold transition-colors flex items-center justify-center gap-1.5 ${displayMode === 'dashboard' ? 'bg-card shadow text-primary' : 'text-muted-foreground'}`}>
-              <LayoutDashboard size={14} />Дашборд ОС
+              <LayoutDashboard size={14} />{t('stats.title')}
             </button>
             <button onClick={() => setDisplayMode('list')} className={`flex-1 md:flex-none px-3 py-2 rounded-md text-xs font-display font-bold transition-colors flex items-center justify-center gap-1.5 ${displayMode === 'list' ? 'bg-card shadow text-primary' : 'text-muted-foreground'}`}>
               <List size={14} />Список

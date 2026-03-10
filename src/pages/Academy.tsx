@@ -3,6 +3,8 @@ import { GraduationCap, BookOpen, Plus, Trash2, Eye, EyeOff, ArrowLeft, Clipboar
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useLabels } from '@/hooks/useLabels';
+import { EditableLabel } from '@/components/ui/editable-label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -19,6 +21,7 @@ type View = 'list' | 'detail' | 'study';
 
 export function AcademyPage() {
   const { isAdmin } = useAuth();
+  const { t } = useLabels();
   const qc = useQueryClient();
   const [view, setView] = useState<View>('list');
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
@@ -76,22 +79,24 @@ export function AcademyPage() {
     return <CourseStudyView courseId={selectedCourseId} onBack={backToList} />;
   }
 
-  if (isLoading) return <div className="text-center py-12 text-muted-foreground text-sm">Загрузка...</div>;
+  if (isLoading) return <div className="text-center py-12 text-muted-foreground text-sm">{t('academy.loading')}</div>;
   const items = courses ?? [];
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl md:text-3xl font-display font-bold text-foreground mb-1">Академия</h1>
-          <p className="text-sm text-muted-foreground font-body">Система обучения по контрольным листам • {items.length} курсов</p>
+          <EditableLabel labelKey="academy.title" as="h1" className="text-2xl md:text-3xl font-display font-bold text-foreground mb-1" />
+          <p className="text-sm text-muted-foreground font-body">
+            <EditableLabel labelKey="academy.subtitle" /> • {items.length} {t('academy.courses_count')}
+          </p>
         </div>
         {isAdmin && (
           <button
             onClick={() => setShowForm(true)}
             className="px-4 py-2.5 bg-primary text-primary-foreground font-display font-bold rounded-xl hover:bg-primary/90 transition-all flex items-center gap-2 text-sm"
           >
-            <Plus size={16} /> Создать курс
+            <Plus size={16} /> <EditableLabel labelKey="academy.create_course" />
           </button>
         )}
       </div>
@@ -99,41 +104,41 @@ export function AcademyPage() {
       <Tabs defaultValue="courses">
         <TabsList className="flex-wrap">
           <TabsTrigger value="courses" className="flex items-center gap-1.5">
-            <ClipboardList size={14} /> Курсы
+            <ClipboardList size={14} /> <EditableLabel labelKey="academy.tab.courses" />
           </TabsTrigger>
           <TabsTrigger value="progress" className="flex items-center gap-1.5">
-            <BarChart3 size={14} /> Прогресс
+            <BarChart3 size={14} /> <EditableLabel labelKey="academy.tab.progress" />
           </TabsTrigger>
           {isAdmin && (
             <TabsTrigger value="checkouts" className="flex items-center gap-1.5">
-              <ClipboardCheck size={14} /> Чек-ауты
+              <ClipboardCheck size={14} /> <EditableLabel labelKey="academy.tab.checkouts" />
             </TabsTrigger>
           )}
           <TabsTrigger value="glossary" className="flex items-center gap-1.5">
-            <SearchIcon size={14} /> Глоссарий
+            <SearchIcon size={14} /> <EditableLabel labelKey="academy.tab.glossary" />
           </TabsTrigger>
           {isAdmin && (
             <TabsTrigger value="barriers" className="flex items-center gap-1.5">
-              <AlertTriangle size={14} /> Барьеры
+              <AlertTriangle size={14} /> <EditableLabel labelKey="academy.tab.barriers" />
             </TabsTrigger>
           )}
           <TabsTrigger value="docs" className="flex items-center gap-1.5">
-            <FileText size={14} /> Документация
+            <FileText size={14} /> <EditableLabel labelKey="academy.tab.docs" />
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="courses">
           {showForm && (
             <div className="border border-primary/20 bg-primary/5 rounded-xl p-4 space-y-3 mb-4">
-              <p className="text-sm font-display font-bold text-foreground">Новый курс</p>
+              <p className="text-sm font-display font-bold text-foreground">{t('academy.new_course')}</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div><label className="text-[10px] font-display font-bold text-muted-foreground uppercase block mb-1">Название *</label><Input value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))} className="bg-background" /></div>
-                <div><label className="text-[10px] font-display font-bold text-muted-foreground uppercase block mb-1">Длительность (часов)</label><Input type="number" value={form.duration_hours} onChange={e => setForm(p => ({ ...p, duration_hours: e.target.value }))} className="bg-background" /></div>
+                <div><label className="text-[10px] font-display font-bold text-muted-foreground uppercase block mb-1">{t('academy.course_name')} *</label><Input value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))} className="bg-background" /></div>
+                <div><label className="text-[10px] font-display font-bold text-muted-foreground uppercase block mb-1">{t('academy.course_duration')}</label><Input type="number" value={form.duration_hours} onChange={e => setForm(p => ({ ...p, duration_hours: e.target.value }))} className="bg-background" /></div>
               </div>
-              <div><label className="text-[10px] font-display font-bold text-muted-foreground uppercase block mb-1">Описание</label><Textarea value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} rows={2} className="bg-background resize-none" /></div>
+              <div><label className="text-[10px] font-display font-bold text-muted-foreground uppercase block mb-1">{t('academy.course_description')}</label><Textarea value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} rows={2} className="bg-background resize-none" /></div>
               <div className="flex gap-2">
-                <button onClick={() => createMut.mutate(form)} disabled={!form.title} className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-xs font-display font-bold disabled:opacity-50">Создать</button>
-                <button onClick={() => setShowForm(false)} className="px-4 py-2 border border-border rounded-lg text-xs font-display font-bold text-muted-foreground">Отмена</button>
+                <button onClick={() => createMut.mutate(form)} disabled={!form.title} className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-xs font-display font-bold disabled:opacity-50">{t('academy.btn_create')}</button>
+                <button onClick={() => setShowForm(false)} className="px-4 py-2 border border-border rounded-lg text-xs font-display font-bold text-muted-foreground">{t('academy.btn_cancel')}</button>
               </div>
             </div>
           )}
@@ -141,7 +146,7 @@ export function AcademyPage() {
           {items.length === 0 ? (
             <div className="bg-card border border-border rounded-xl p-12 text-center">
               <GraduationCap size={40} className="text-muted-foreground/30 mx-auto mb-3" />
-              <p className="text-muted-foreground font-body text-sm">Нет курсов. Создайте первый!</p>
+              <p className="text-muted-foreground font-body text-sm">{t('academy.no_courses')}</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -158,7 +163,7 @@ export function AcademyPage() {
                         <button onClick={e => { e.stopPropagation(); openStudy(course.id); }} className="p-1.5 rounded hover:bg-accent text-muted-foreground" title="Превью прохождения">
                           <BookOpen size={14} />
                         </button>
-                        <button onClick={e => { e.stopPropagation(); if (confirm('Удалить курс?')) deleteMut.mutate(course.id); }} className="p-1.5 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive">
+                        <button onClick={e => { e.stopPropagation(); if (confirm(t('academy.delete_course'))) deleteMut.mutate(course.id); }} className="p-1.5 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive">
                           <Trash2 size={14} />
                         </button>
                       </div>
@@ -168,13 +173,13 @@ export function AcademyPage() {
                         <ClipboardList size={20} className="text-primary" />
                       </div>
                       <span className={`text-[10px] font-display font-semibold uppercase tracking-wider px-2 py-1 rounded ${course.is_published ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}>
-                        {course.is_published ? 'Активен' : 'Черновик'}
+                        {course.is_published ? t('academy.status_active') : t('academy.status_draft')}
                       </span>
                     </div>
                     <h3 className="font-display font-semibold text-foreground mb-2 group-hover:text-primary transition-colors">{course.title}</h3>
                     {course.description && <p className="text-xs text-muted-foreground font-body mb-2 line-clamp-2">{course.description}</p>}
                     <div className="flex items-center gap-4 text-xs text-muted-foreground font-body">
-                      <span>{sections} пунктов</span>
+                      <span>{sections} {t('academy.items_count')}</span>
                       {course.duration_hours && <span>{course.duration_hours} ч.</span>}
                       {course.is_hst_course && <span className="text-primary font-display font-bold">HST</span>}
                     </div>

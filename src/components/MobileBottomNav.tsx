@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { ViewMode } from '@/types';
+import { useLabels } from '@/hooks/useLabels';
 
 interface MobileBottomNavProps {
   currentView: ViewMode;
@@ -7,23 +8,24 @@ interface MobileBottomNavProps {
   isAdmin: boolean;
 }
 
-const MOBILE_TABS: { id: ViewMode; icon: string; label: string; adminOnly?: boolean }[] = [
-  { id: 'command_center', icon: 'Home', label: 'Главная' },
-  { id: 'org_chart', icon: 'Network', label: 'Оргсхема' },
-  { id: 'employees', icon: 'LayoutGrid', label: 'Персонал', adminOnly: true },
-  { id: 'academy', icon: 'GraduationCap', label: 'Академия' },
-  { id: 'statistics', icon: 'TrendingUp', label: 'Статистика' },
+const MOBILE_TABS: { id: ViewMode; icon: string; labelKey: string; adminOnly?: boolean }[] = [
+  { id: 'command_center', icon: 'Home', labelKey: 'mobile.home' },
+  { id: 'org_chart', icon: 'Network', labelKey: 'mobile.org_chart' },
+  { id: 'employees', icon: 'LayoutGrid', labelKey: 'mobile.employees', adminOnly: true },
+  { id: 'academy', icon: 'GraduationCap', labelKey: 'mobile.academy' },
+  { id: 'statistics', icon: 'TrendingUp', labelKey: 'mobile.statistics' },
 ];
 
-// Inline simple icons to avoid large import
 import { Home, Network, LayoutGrid, GraduationCap, TrendingUp } from 'lucide-react';
 const ICONS: Record<string, React.ElementType> = { Home, Network, LayoutGrid, GraduationCap, TrendingUp };
 
 export function MobileBottomNav({ currentView, onViewChange, isAdmin }: MobileBottomNavProps) {
+  const { t } = useLabels();
+
   return (
     <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-card border-t border-border z-30 safe-area-bottom">
       <div className="flex items-center justify-around px-2 py-2">
-        {MOBILE_TABS.filter(t => !t.adminOnly || isAdmin).map(tab => {
+        {MOBILE_TABS.filter(tab => !tab.adminOnly || isAdmin).map(tab => {
           const isActive = currentView === tab.id;
           const Icon = ICONS[tab.icon];
           return (
@@ -45,7 +47,7 @@ export function MobileBottomNav({ currentView, onViewChange, isAdmin }: MobileBo
                 </motion.div>
               )}
               <Icon size={20} />
-              <span className="text-[10px] font-display font-medium">{tab.label}</span>
+              <span className="text-[10px] font-display font-medium">{t(tab.labelKey)}</span>
             </button>
           );
         })}

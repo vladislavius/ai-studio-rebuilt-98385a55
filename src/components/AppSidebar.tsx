@@ -4,6 +4,8 @@ import { ChevronLeft, ChevronRight, ChevronDown, X, LogOut, Sun, Moon } from 'lu
 import { MAIN_NAV, STATS_NAV, SETTINGS_NAV, TOOLS_NAV } from '@/constants/navigation';
 import { useDepartments } from '@/hooks/useDepartments';
 import { useEmployees } from '@/hooks/useEmployees';
+import { useLabels } from '@/hooks/useLabels';
+import { EditableLabel } from '@/components/ui/editable-label';
 import { ViewMode } from '@/types';
 import { useTheme } from '@/hooks/useTheme';
 
@@ -33,6 +35,7 @@ export function AppSidebar({
   onLogout,
 }: AppSidebarProps) {
   const { data: employees } = useEmployees();
+  const { t } = useLabels();
   const { theme, toggleTheme } = useTheme();
   const employeeCount = employees?.length ?? 0;
   const sidebarWidth = isSidebarCollapsed ? 'w-20' : 'w-72';
@@ -68,15 +71,13 @@ export function AppSidebar({
       <nav className="p-3 md:p-4 space-y-1 flex-1 overflow-x-hidden overflow-y-auto">
         <div className="mb-4 md:mb-6">
           {!isSidebarCollapsed && (
-            <p className="px-3 md:px-4 text-xs font-display font-semibold text-muted-foreground uppercase tracking-wider mb-2 md:mb-3">
-              Основное
-            </p>
+            <EditableLabel labelKey="nav.main" as="p" className="px-3 md:px-4 text-xs font-display font-semibold text-muted-foreground uppercase tracking-wider mb-2 md:mb-3" />
           )}
           {MAIN_NAV.filter(item => !item.adminOnly || isAdmin).map(item => (
             <SidebarButton
               key={item.id}
               icon={<item.icon size={18} />}
-              label={item.label}
+              label={t(item.labelKey)}
               isActive={currentView === item.id}
               isCollapsed={isSidebarCollapsed}
               onClick={() => onViewChange(item.id)}
@@ -86,13 +87,11 @@ export function AppSidebar({
 
         <div>
           {!isSidebarCollapsed && (
-            <p className="px-3 md:px-4 text-xs font-display font-semibold text-muted-foreground uppercase tracking-wider mb-2 md:mb-3">
-              Статистики
-            </p>
+            <EditableLabel labelKey="nav.statistics" as="p" className="px-3 md:px-4 text-xs font-display font-semibold text-muted-foreground uppercase tracking-wider mb-2 md:mb-3" />
           )}
           <SidebarButton
             icon={<STATS_NAV.icon size={18} />}
-            label={STATS_NAV.label}
+            label={t(STATS_NAV.labelKey)}
             isActive={currentView === 'statistics' && !selectedDept}
             isCollapsed={isSidebarCollapsed}
             onClick={() => onStatisticsView(null)}
@@ -108,15 +107,13 @@ export function AppSidebar({
 
         <div className="mt-4 md:mt-6 border-t border-sidebar-border pt-3 md:pt-4">
           {!isSidebarCollapsed && (
-            <p className="px-3 md:px-4 text-xs font-display font-semibold text-muted-foreground uppercase tracking-wider mb-2 md:mb-3">
-              Инструменты
-            </p>
+            <EditableLabel labelKey="nav.tools" as="p" className="px-3 md:px-4 text-xs font-display font-semibold text-muted-foreground uppercase tracking-wider mb-2 md:mb-3" />
           )}
           {TOOLS_NAV.map(item => (
             <SidebarButton
               key={item.id}
               icon={<item.icon size={18} />}
-              label={item.label}
+              label={t(item.labelKey)}
               isActive={currentView === item.id}
               isCollapsed={isSidebarCollapsed}
               onClick={() => onViewChange(item.id)}
@@ -127,13 +124,11 @@ export function AppSidebar({
         {isAdmin && (
           <div className="mt-4 md:mt-6 border-t border-sidebar-border pt-3 md:pt-4">
             {!isSidebarCollapsed && (
-              <p className="px-3 md:px-4 text-xs font-display font-semibold text-muted-foreground uppercase tracking-wider mb-2 md:mb-3">
-                Конфигурация
-              </p>
+              <EditableLabel labelKey="nav.config" as="p" className="px-3 md:px-4 text-xs font-display font-semibold text-muted-foreground uppercase tracking-wider mb-2 md:mb-3" />
             )}
             <SidebarButton
               icon={<SETTINGS_NAV.icon size={18} />}
-              label={SETTINGS_NAV.label}
+              label={t(SETTINGS_NAV.labelKey)}
               isActive={currentView === 'settings'}
               isCollapsed={isSidebarCollapsed}
               onClick={() => onViewChange('settings')}
@@ -146,7 +141,7 @@ export function AppSidebar({
       <div className="p-3 md:p-4 border-t border-sidebar-border space-y-3">
         {!isSidebarCollapsed && isAdmin && (
           <div className="bg-accent rounded-xl p-3 md:p-4 text-center">
-            <p className="text-xs text-muted-foreground mb-1 font-display font-medium">Сотрудников</p>
+            <p className="text-xs text-muted-foreground mb-1 font-display font-medium">{t('nav.employees_count')}</p>
             <p className="text-2xl font-display font-bold text-foreground">{employeeCount}</p>
           </div>
         )}
@@ -161,10 +156,10 @@ export function AppSidebar({
           <button
             onClick={onLogout}
             className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-destructive/30 text-destructive hover:bg-destructive/10 font-display font-medium transition-colors text-sm ${isSidebarCollapsed ? 'flex-1 px-0' : 'flex-1'}`}
-            title="Выход"
+            title={t('nav.logout')}
           >
             <LogOut size={18} />
-            {!isSidebarCollapsed && <span>Выход</span>}
+            {!isSidebarCollapsed && <span>{t('nav.logout')}</span>}
           </button>
         </div>
       </div>
@@ -212,10 +207,10 @@ function DepartmentsList({
 }) {
   const [isExpanded, setIsExpanded] = useState(true);
   const { data: departments } = useDepartments();
+  const { t } = useLabels();
 
   if (isCollapsed) return null;
 
-  // Only show top-level departments (no parent_id)
   const topLevelDepts = (departments ?? [])
     .filter(d => !d.parent_id)
     .sort((a, b) => {
@@ -234,7 +229,7 @@ function DepartmentsList({
         <div className="flex-shrink-0">
           {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
         </div>
-        <span className="whitespace-nowrap">Департаменты</span>
+        <span className="whitespace-nowrap">{t('nav.departments')}</span>
       </button>
       {isExpanded && (
         <div className="mt-1 space-y-0.5 pl-2">

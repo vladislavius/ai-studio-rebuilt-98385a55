@@ -3,56 +3,56 @@ import { ViewMode, EmployeeSubView, DocumentsSubView, ListSubView } from '@/type
 
 interface NavItem {
   id: ViewMode;
-  label: string;
+  labelKey: string;
   icon: typeof Home;
   adminOnly?: boolean;
 }
 
 export const MAIN_NAV: NavItem[] = [
-  { id: 'command_center', label: 'Пункт управления', icon: Home },
-  { id: 'org_chart', label: 'Оргсхема', icon: Network },
-  { id: 'employees', label: 'Сотрудники', icon: LayoutGrid, adminOnly: true },
-  { id: 'academy', label: 'Академия', icon: GraduationCap },
+  { id: 'command_center', labelKey: 'nav.command_center', icon: Home },
+  { id: 'org_chart', labelKey: 'nav.org_chart', icon: Network },
+  { id: 'employees', labelKey: 'nav.employees', icon: LayoutGrid, adminOnly: true },
+  { id: 'academy', labelKey: 'nav.academy', icon: GraduationCap },
 ];
 
 export const STATS_NAV = {
   id: 'statistics' as ViewMode,
-  label: 'Дашборд ОС',
+  labelKey: 'nav.stats_dashboard',
   icon: TrendingUp,
 };
 
 export const TOOLS_NAV: NavItem[] = [
-  { id: 'admin_scale', label: 'Админ Шкала', icon: Scale },
+  { id: 'admin_scale', labelKey: 'nav.admin_scale', icon: Scale },
 ];
 
 export const SETTINGS_NAV = {
   id: 'settings' as ViewMode,
-  label: 'Настройки',
+  labelKey: 'nav.settings',
   icon: Settings,
   adminOnly: true,
 };
 
 export interface EmployeeTab {
   id: EmployeeSubView;
-  label: string;
+  labelKey: string;
   icon: typeof Users;
 }
 
 export const EMPLOYEE_TABS: EmployeeTab[] = [
-  { id: 'list', label: 'Персонал', icon: Users },
-  { id: 'reports', label: 'Отчёты', icon: BarChart3 },
-  { id: 'birthdays', label: 'Дни Рождения', icon: Cake },
-  { id: 'onboarding', label: 'Онбординг', icon: UserCheck },
-  { id: 'documents', label: 'Документы', icon: FileText },
+  { id: 'list', labelKey: 'emp.tab.personnel', icon: Users },
+  { id: 'reports', labelKey: 'emp.tab.reports', icon: BarChart3 },
+  { id: 'birthdays', labelKey: 'emp.tab.birthdays', icon: Cake },
+  { id: 'onboarding', labelKey: 'emp.tab.onboarding', icon: UserCheck },
+  { id: 'documents', labelKey: 'emp.tab.documents', icon: FileText },
 ];
 
-export const DOCUMENTS_TABS: { id: DocumentsSubView; label: string; icon: typeof FileText }[] = [
-  { id: 'sent', label: 'Отправленные', icon: FileText },
-  { id: 'received', label: 'Полученные', icon: Upload },
-  { id: 'closing', label: 'Закрывающие', icon: FileDown },
+export const DOCUMENTS_TABS: { id: DocumentsSubView; labelKey: string; icon: typeof FileText }[] = [
+  { id: 'sent', labelKey: 'emp.docs.sent', icon: FileText },
+  { id: 'received', labelKey: 'emp.docs.received', icon: Upload },
+  { id: 'closing', labelKey: 'emp.docs.closing', icon: FileDown },
 ];
 
-export const LIST_TABS: { id: ListSubView; label: string; icon: typeof Users }[] = [
-  { id: 'employees', label: 'Сотрудники', icon: Users },
-  { id: 'candidates', label: 'Кандидаты', icon: UserPlus },
+export const LIST_TABS: { id: ListSubView; labelKey: string; icon: typeof Users }[] = [
+  { id: 'employees', labelKey: 'emp.tab.employees', icon: Users },
+  { id: 'candidates', labelKey: 'emp.tab.candidates', icon: UserPlus },
 ];
