@@ -172,6 +172,10 @@ export function AcademyPage() {
         <TabsContent value="progress">
           <ProgressDashboard />
         </TabsContent>
+
+        <TabsContent value="docs">
+          <AcademyDocsPage />
+        </TabsContent>
       </Tabs>
     </div>
   );
