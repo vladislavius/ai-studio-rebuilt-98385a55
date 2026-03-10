@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
 import { GenerateChecksheetModal } from './GenerateChecksheetModal';
+import { RichTextEditor } from './RichTextEditor';
 
 interface ChecksheetItem {
   id: string;
