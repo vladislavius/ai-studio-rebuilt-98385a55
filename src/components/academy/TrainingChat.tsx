@@ -13,7 +13,7 @@ interface Props {
 }
 
 export function TrainingChat({ courseId, employeeId, stepId, mode }: Props) {
-  const { user, profile } = useAuth();
+  const { user } = useAuth();
   const qc = useQueryClient();
   const [message, setMessage] = useState('');
   const [isOpen, setIsOpen] = useState(mode === 'step_comment');
