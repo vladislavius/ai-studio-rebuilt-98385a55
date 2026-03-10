@@ -20,13 +20,24 @@ import { BarriersAnalytics } from '@/components/academy/BarriersAnalytics';
 type View = 'list' | 'detail' | 'study';
 
 export function AcademyPage() {
-  const { isAdmin } = useAuth();
+  const { isAdmin, user } = useAuth();
   const { t } = useLabels();
   const qc = useQueryClient();
   const [view, setView] = useState<View>('list');
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ title: '', description: '', duration_hours: '' });
+
+  // Find employee record matching current user's email
+  const { data: myEmployee } = useQuery({
+    queryKey: ['my-employee', user?.email],
+    queryFn: async () => {
+      if (!user?.email) return null;
+      const { data } = await supabase.from('employees').select('id').eq('email', user.email).maybeSingle();
+      return data;
+    },
+    enabled: !!user?.email,
+  });
 
   const { data: courses, isLoading } = useQuery({
     queryKey: ['courses'],
