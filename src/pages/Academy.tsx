@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { GraduationCap, BookOpen, Plus, Trash2, Eye, EyeOff, ArrowLeft, ClipboardList, BarChart3, FileText, Search as SearchIcon, ClipboardCheck, AlertTriangle } from 'lucide-react';
+import { GraduationCap, BookOpen, Plus, Trash2, Eye, EyeOff, ArrowLeft, ClipboardList, BarChart3, FileText, Search as SearchIcon, ClipboardCheck, AlertTriangle, Layers, Users } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -16,11 +16,13 @@ import { AcademyDocsPage } from '@/components/academy/AcademyDocsPage';
 import { GlossaryManager } from '@/components/academy/GlossaryManager';
 import { CheckoutReviewPanel } from '@/components/academy/CheckoutReviewPanel';
 import { BarriersAnalytics } from '@/components/academy/BarriersAnalytics';
+import { ProgramsManager } from '@/components/academy/ProgramsManager';
+import { SupervisorAssignment } from '@/components/academy/SupervisorAssignment';
 
 type View = 'list' | 'detail' | 'study';
 
 export function AcademyPage() {
-  const { isAdmin, user } = useAuth();
+  const { isAdmin, isSupervisor, user } = useAuth();
   const { t } = useLabels();
   const qc = useQueryClient();
   const [view, setView] = useState<View>('list');
@@ -133,6 +135,14 @@ export function AcademyPage() {
               <AlertTriangle size={14} /> <EditableLabel labelKey="academy.tab.barriers" />
             </TabsTrigger>
           )}
+          <TabsTrigger value="programs" className="flex items-center gap-1.5">
+            <Layers size={14} /> <EditableLabel labelKey="academy.tab.programs" />
+          </TabsTrigger>
+          {isAdmin && (
+            <TabsTrigger value="supervisors" className="flex items-center gap-1.5">
+              <Users size={14} /> <EditableLabel labelKey="academy.tab.supervisors" />
+            </TabsTrigger>
+          )}
           <TabsTrigger value="docs" className="flex items-center gap-1.5">
             <FileText size={14} /> <EditableLabel labelKey="academy.tab.docs" />
           </TabsTrigger>
@@ -218,6 +228,16 @@ export function AcademyPage() {
         {isAdmin && (
           <TabsContent value="barriers">
             <BarriersAnalytics />
+          </TabsContent>
+        )}
+
+        <TabsContent value="programs">
+          <ProgramsManager />
+        </TabsContent>
+
+        {isAdmin && (
+          <TabsContent value="supervisors">
+            <SupervisorAssignment />
           </TabsContent>
         )}
 

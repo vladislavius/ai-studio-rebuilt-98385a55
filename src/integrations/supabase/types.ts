@@ -248,6 +248,45 @@ export type Database = {
           },
         ]
       }
+      course_supervisors: {
+        Row: {
+          assigned_at: string
+          course_id: string
+          employee_id: string
+          id: string
+          supervisor_user_id: string
+        }
+        Insert: {
+          assigned_at?: string
+          course_id: string
+          employee_id: string
+          id?: string
+          supervisor_user_id: string
+        }
+        Update: {
+          assigned_at?: string
+          course_id?: string
+          employee_id?: string
+          id?: string
+          supervisor_user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_supervisors_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "course_supervisors_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       courses: {
         Row: {
           created_at: string
@@ -723,6 +762,78 @@ export type Database = {
         }
         Relationships: []
       }
+      program_courses: {
+        Row: {
+          course_id: string
+          id: string
+          is_required: boolean | null
+          program_id: string
+          sort_order: number | null
+        }
+        Insert: {
+          course_id: string
+          id?: string
+          is_required?: boolean | null
+          program_id: string
+          sort_order?: number | null
+        }
+        Update: {
+          course_id?: string
+          id?: string
+          is_required?: boolean | null
+          program_id?: string
+          sort_order?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "program_courses_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "program_courses_program_id_fkey"
+            columns: ["program_id"]
+            isOneToOne: false
+            referencedRelation: "programs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      programs: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_published: boolean | null
+          sort_order: number | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_published?: boolean | null
+          sort_order?: number | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_published?: boolean | null
+          sort_order?: number | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       report_templates: {
         Row: {
           created_at: string
@@ -1155,7 +1266,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "moderator" | "user"
+      app_role: "admin" | "moderator" | "user" | "supervisor" | "author"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1283,7 +1394,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "moderator", "user"],
+      app_role: ["admin", "moderator", "user", "supervisor", "author"],
     },
   },
 } as const

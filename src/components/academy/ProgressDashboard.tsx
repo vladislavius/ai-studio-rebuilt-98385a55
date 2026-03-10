@@ -1,8 +1,10 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Progress } from '@/components/ui/progress';
-import { Award, Clock, AlertCircle } from 'lucide-react';
+import { Award, Clock, AlertCircle, ShieldCheck } from 'lucide-react';
 import { useState } from 'react';
+import { useAuth } from '@/hooks/useAuth';
+import { toast } from 'sonner';
 
 type StatusFilter = 'all' | 'not_started' | 'in_progress' | 'completed' | 'certified';
 
@@ -15,7 +17,21 @@ const STATUS_LABELS: Record<StatusFilter, string> = {
 };
 
 export function ProgressDashboard() {
+  const { isAdmin, isSupervisor } = useAuth();
+  const qc = useQueryClient();
   const [filter, setFilter] = useState<StatusFilter>('all');
+
+  const certifyMut = useMutation({
+    mutationFn: async (progressId: string) => {
+      const { error } = await supabase.from('course_progress').update({ certified: true }).eq('id', progressId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['all-course-progress'] });
+      toast.success('Курс сертифицирован ✓');
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
 
   const { data: progress, isLoading } = useQuery({
     queryKey: ['all-course-progress'],
@@ -138,9 +154,20 @@ export function ProgressDashboard() {
                         </div>
                       </td>
                       <td className="p-3">
-                        <span className={`text-[10px] font-display font-bold uppercase px-2 py-1 rounded ${statusColors[status]}`}>
-                          {STATUS_LABELS[status]}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className={`text-[10px] font-display font-bold uppercase px-2 py-1 rounded ${statusColors[status]}`}>
+                            {STATUS_LABELS[status]}
+                          </span>
+                          {(isAdmin || isSupervisor) && status === 'completed' && !p.certified && (
+                            <button
+                              onClick={() => certifyMut.mutate(p.id)}
+                              disabled={certifyMut.isPending}
+                              className="px-2 py-1 bg-primary text-primary-foreground rounded text-[10px] font-display font-bold flex items-center gap-1 hover:bg-primary/90 disabled:opacity-50"
+                            >
+                              <ShieldCheck size={12} /> Сертифицировать
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   );
