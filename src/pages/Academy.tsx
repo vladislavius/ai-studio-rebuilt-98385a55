@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import { CourseChecksheet } from '@/components/academy/CourseChecksheet';
 import { CourseStudyView } from '@/components/academy/CourseStudyView';
 import { ProgressDashboard } from '@/components/academy/ProgressDashboard';
+import { AcademyDocsPage } from '@/components/academy/AcademyDocsPage';
 
 type View = 'list' | 'detail' | 'study';
 
