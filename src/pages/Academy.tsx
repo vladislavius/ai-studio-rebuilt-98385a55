@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { GraduationCap, BookOpen, Plus, Trash2, Eye, EyeOff, ArrowLeft, ClipboardList, BarChart3, FileText, Search as SearchIcon } from 'lucide-react';
+import { GraduationCap, BookOpen, Plus, Trash2, Eye, EyeOff, ArrowLeft, ClipboardList, BarChart3, FileText, Search as SearchIcon, ClipboardCheck, AlertTriangle } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -12,6 +12,8 @@ import { CourseStudyView } from '@/components/academy/CourseStudyView';
 import { ProgressDashboard } from '@/components/academy/ProgressDashboard';
 import { AcademyDocsPage } from '@/components/academy/AcademyDocsPage';
 import { GlossaryManager } from '@/components/academy/GlossaryManager';
+import { CheckoutReviewPanel } from '@/components/academy/CheckoutReviewPanel';
+import { BarriersAnalytics } from '@/components/academy/BarriersAnalytics';
 
 type View = 'list' | 'detail' | 'study';
 
@@ -95,16 +97,26 @@ export function AcademyPage() {
       </div>
 
       <Tabs defaultValue="courses">
-        <TabsList>
+        <TabsList className="flex-wrap">
           <TabsTrigger value="courses" className="flex items-center gap-1.5">
             <ClipboardList size={14} /> Курсы
           </TabsTrigger>
-           <TabsTrigger value="progress" className="flex items-center gap-1.5">
+          <TabsTrigger value="progress" className="flex items-center gap-1.5">
             <BarChart3 size={14} /> Прогресс
           </TabsTrigger>
+          {isAdmin && (
+            <TabsTrigger value="checkouts" className="flex items-center gap-1.5">
+              <ClipboardCheck size={14} /> Чек-ауты
+            </TabsTrigger>
+          )}
           <TabsTrigger value="glossary" className="flex items-center gap-1.5">
             <SearchIcon size={14} /> Глоссарий
           </TabsTrigger>
+          {isAdmin && (
+            <TabsTrigger value="barriers" className="flex items-center gap-1.5">
+              <AlertTriangle size={14} /> Барьеры
+            </TabsTrigger>
+          )}
           <TabsTrigger value="docs" className="flex items-center gap-1.5">
             <FileText size={14} /> Документация
           </TabsTrigger>
@@ -177,9 +189,21 @@ export function AcademyPage() {
           <ProgressDashboard />
         </TabsContent>
 
+        {isAdmin && (
+          <TabsContent value="checkouts">
+            <CheckoutReviewPanel />
+          </TabsContent>
+        )}
+
         <TabsContent value="glossary">
           <GlossaryManager />
         </TabsContent>
+
+        {isAdmin && (
+          <TabsContent value="barriers">
+            <BarriersAnalytics />
+          </TabsContent>
+        )}
 
         <TabsContent value="docs">
           <AcademyDocsPage />
