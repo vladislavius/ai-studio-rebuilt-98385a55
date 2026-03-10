@@ -721,10 +721,16 @@ export function StatisticsPage({ selectedDeptId }: StatisticsPageProps) {
                 {/* Big button */}
                 <div className="px-5 pb-5">
                   <button
-                    onClick={() => setShowEditForm(!showEditForm)}
+                    onClick={() => {
+                      const next = !showEditForm;
+                      setShowEditForm(next);
+                      if (next) {
+                        setTimeout(() => editorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+                      }
+                    }}
                     className="w-full py-3.5 bg-primary text-primary-foreground rounded-xl text-sm font-display font-bold hover:bg-primary/90 transition-colors uppercase tracking-wider"
                   >
-                    РЕДАКТИРОВАТЬ ДАННЫЕ (ВВОД)
+                    {showEditForm ? 'СКРЫТЬ РЕДАКТОР' : 'РЕДАКТИРОВАТЬ ДАННЫЕ (ВВОД)'}
                   </button>
                 </div>
 
