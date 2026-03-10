@@ -536,13 +536,21 @@ export function StatisticsPage({ selectedDeptId }: StatisticsPageProps) {
                       <YAxis tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} />
                       <Tooltip
                         contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', fontSize: '12px' }}
-                        formatter={(val: number, name: string) => [val.toLocaleString('ru-RU'), name === 'fact' ? 'Факт' : 'План']}
+                        formatter={(val: number, name: string) => {
+                          const labels: Record<string, string> = { fact: 'Факт', plan: 'План', trend: 'Тренд' };
+                          return [val.toLocaleString('ru-RU'), labels[name] || name];
+                        }}
                       />
-                      <Legend formatter={(val) => val === 'fact' ? 'Факт' : 'План'} />
+                      <Legend formatter={(val) => {
+                        const labels: Record<string, string> = { fact: 'Факт', plan: 'План', trend: 'Тренд' };
+                        return labels[val] || val;
+                      }} />
                       <Line type="linear" dataKey="fact" stroke="#10b981" strokeWidth={2} dot={{ fill: '#10b981', r: 3, strokeWidth: 0 }} activeDot={{ r: 5 }} name="fact" />
                       {expandedChartData.some(d => d.plan != null) && (
                         <Line type="linear" dataKey="plan" stroke="#f43f5e" strokeWidth={1.5} strokeDasharray="5 5" dot={{ fill: '#f43f5e', r: 3, strokeWidth: 0 }} name="plan" />
                       )}
+                      {/* Trend line */}
+                      <Line type="linear" dataKey="trend" stroke="#6366f1" strokeWidth={1.5} strokeDasharray="6 4" dot={false} activeDot={false} name="trend" />
                     </LineChart>
                   </ResponsiveContainer>
                 ) : (
