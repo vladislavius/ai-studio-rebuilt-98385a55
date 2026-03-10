@@ -1,8 +1,10 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Progress } from '@/components/ui/progress';
-import { Award, Clock, AlertCircle } from 'lucide-react';
+import { Award, Clock, AlertCircle, ShieldCheck } from 'lucide-react';
 import { useState } from 'react';
+import { useAuth } from '@/hooks/useAuth';
+import { toast } from 'sonner';
 
 type StatusFilter = 'all' | 'not_started' | 'in_progress' | 'completed' | 'certified';
 
