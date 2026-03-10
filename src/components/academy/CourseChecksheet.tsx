@@ -160,6 +160,7 @@ export function CourseChecksheet({ courseId, onBack }: Props) {
   const [isHst, setIsHst] = useState(false);
   const [showAssign, setShowAssign] = useState(false);
   const [showGenerate, setShowGenerate] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
   const [selectedEmployees, setSelectedEmployees] = useState<string[]>([]);
 
   const { data: course, isLoading } = useQuery({
