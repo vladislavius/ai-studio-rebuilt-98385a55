@@ -225,7 +225,7 @@ export function CourseStudyView({ courseId, onBack, employeeId }: Props) {
     return { blocked: false, reason: '' };
   };
 
-  const activeBlocked = activeItem ? isStepBlocked(activeItem) : { blocked: false, reason: '' };
+  const activeBlocked = activeItem ? isStepBlocked(activeItem, activeIdx) : { blocked: false, reason: '' };
 
   return (
     <div className="space-y-4">
