@@ -53,47 +53,48 @@
   }
 
   .light {
-    --background: 0 0% 98%;
-    --foreground: 0 0% 10%;
+    --background: 220 20% 97%;
+    --foreground: 220 20% 12%;
 
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 10%;
+    --card-foreground: 220 20% 12%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 10%;
+    --popover-foreground: 220 20% 12%;
 
-    --primary: 66 100% 50%;
-    --primary-foreground: 0 0% 4%;
+    /* Деловой тёмно-синий акцент */
+    --primary: 220 65% 42%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 235 100% 65%;
-    --secondary-foreground: 0 0% 98%;
+    --secondary: 220 14% 90%;
+    --secondary-foreground: 220 20% 18%;
 
-    --muted: 0 0% 93%;
-    --muted-foreground: 0 0% 40%;
+    --muted: 220 14% 93%;
+    --muted-foreground: 220 10% 46%;
 
-    --accent: 0 0% 94%;
-    --accent-foreground: 0 0% 10%;
+    --accent: 220 14% 94%;
+    --accent-foreground: 220 20% 12%;
 
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 0 0% 88%;
-    --input: 0 0% 90%;
-    --ring: 66 100% 50%;
+    --border: 220 14% 87%;
+    --input: 220 14% 90%;
+    --ring: 220 65% 42%;
 
-    --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 0 0% 35%;
-    --sidebar-primary: 66 100% 50%;
-    --sidebar-primary-foreground: 0 0% 4%;
-    --sidebar-accent: 0 0% 95%;
-    --sidebar-accent-foreground: 0 0% 10%;
-    --sidebar-border: 0 0% 90%;
-    --sidebar-ring: 66 100% 50%;
+    --sidebar-background: 220 20% 14%;
+    --sidebar-foreground: 220 10% 72%;
+    --sidebar-primary: 220 65% 55%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 220 20% 20%;
+    --sidebar-accent-foreground: 220 10% 90%;
+    --sidebar-border: 220 15% 22%;
+    --sidebar-ring: 220 65% 55%;
 
-    --surface: 0 0% 96%;
-    --surface-foreground: 0 0% 25%;
-    --glow: 66 100% 50%;
-    --info: 235 100% 65%;
+    --surface: 220 14% 95%;
+    --surface-foreground: 220 10% 30%;
+    --glow: 220 65% 42%;
+    --info: 220 65% 55%;
   }
 }
 
