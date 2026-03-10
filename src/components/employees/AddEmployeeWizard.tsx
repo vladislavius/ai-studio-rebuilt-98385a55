@@ -5,6 +5,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useDepartments } from '@/hooks/useDepartments';
 import { useEmployees, useCreateEmployee } from '@/hooks/useEmployees';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 interface AddEmployeeWizardProps {
