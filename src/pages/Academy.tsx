@@ -231,6 +231,16 @@ export function AcademyPage() {
           </TabsContent>
         )}
 
+        <TabsContent value="programs">
+          <ProgramsManager />
+        </TabsContent>
+
+        {isAdmin && (
+          <TabsContent value="supervisors">
+            <SupervisorAssignment />
+          </TabsContent>
+        )}
+
         <TabsContent value="docs">
           <AcademyDocsPage />
         </TabsContent>
