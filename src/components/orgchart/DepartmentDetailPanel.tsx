@@ -245,7 +245,7 @@ export function DepartmentDetailPanel({ dept, allDepts, employees, onClose, isAd
                           <div className="h-16">
                             <ResponsiveContainer width="100%" height="100%">
                               <LineChart data={chartData}>
-                                <Line type="monotone" dataKey="value" stroke={dept.color ?? 'hsl(var(--primary))'} strokeWidth={2} dot={false} />
+                                <Line type="linear" dataKey="value" stroke={dept.color ?? 'hsl(var(--primary))'} strokeWidth={2} dot={{ r: 2, fill: dept.color ?? 'hsl(var(--primary))' }} />
                                 <Tooltip
                                   contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', fontSize: '10px' }}
                                   labelStyle={{ color: 'hsl(var(--muted-foreground))' }}

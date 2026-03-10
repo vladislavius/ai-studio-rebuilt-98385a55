@@ -6,6 +6,10 @@ import { EmployeeList } from '@/components/employees/EmployeeList';
 import { EmployeeForm } from '@/components/employees/EmployeeForm';
 import { AddEmployeeWizard } from '@/components/employees/AddEmployeeWizard';
 import { BirthdayList } from '@/components/employees/BirthdayList';
+import { CandidatesList } from '@/components/employees/CandidatesList';
+import { OnboardingList } from '@/components/employees/OnboardingList';
+import { ReportsList } from '@/components/employees/ReportsList';
+import { DocumentsList } from '@/components/employees/DocumentsList';
 import { useEmployees } from '@/hooks/useEmployees';
 import { TubelightTabs } from '@/components/ui/tubelight-tabs';
 
@@ -16,6 +20,8 @@ interface EmployeesPageProps {
   setListSubView: (v: ListSubView) => void;
   documentsSubView: DocumentsSubView;
   setDocumentsSubView: (v: DocumentsSubView) => void;
+  initialEditId?: string | null;
+  showWizardOnMount?: boolean;
 }
 
 export function EmployeesPage({
@@ -25,10 +31,12 @@ export function EmployeesPage({
   setListSubView,
   documentsSubView,
   setDocumentsSubView,
+  initialEditId,
+  showWizardOnMount,
 }: EmployeesPageProps) {
-  const [showForm, setShowForm] = useState(false);
-  const [showWizard, setShowWizard] = useState(false);
-  const [editId, setEditId] = useState<string | null>(null);
+  const [showForm, setShowForm] = useState(!!initialEditId);
+  const [showWizard, setShowWizard] = useState(!!showWizardOnMount);
+  const [editId, setEditId] = useState<string | null>(initialEditId ?? null);
   const { data: employees } = useEmployees();
 
   const openCreate = () => { setShowWizard(true); };
@@ -69,7 +77,6 @@ export function EmployeesPage({
           </div>
         </div>
 
-        {/* List sub-tabs */}
         {employeeSubView === 'list' && (
           <TubelightTabs
             items={LIST_TABS}
@@ -79,7 +86,6 @@ export function EmployeesPage({
           />
         )}
 
-        {/* Document sub-tabs */}
         {employeeSubView === 'documents' && (
           <TubelightTabs
             items={DOCUMENTS_TABS}
@@ -96,18 +102,12 @@ export function EmployeesPage({
           <EmployeeList onEdit={openEdit} />
         )}
         {employeeSubView === 'list' && listSubView === 'candidates' && (
-          <div className="text-center py-12 text-muted-foreground font-body text-sm">Раздел кандидатов — в разработке</div>
+          <CandidatesList />
         )}
         {employeeSubView === 'birthdays' && <BirthdayList />}
-        {employeeSubView === 'reports' && (
-          <div className="text-center py-12 text-muted-foreground font-body text-sm">Раздел отчётов — в разработке</div>
-        )}
-        {employeeSubView === 'onboarding' && (
-          <div className="text-center py-12 text-muted-foreground font-body text-sm">Раздел онбординга — в разработке</div>
-        )}
-        {employeeSubView === 'documents' && (
-          <div className="text-center py-12 text-muted-foreground font-body text-sm">Раздел документов — в разработке</div>
-        )}
+        {employeeSubView === 'reports' && <ReportsList />}
+        {employeeSubView === 'onboarding' && <OnboardingList />}
+        {employeeSubView === 'documents' && <DocumentsList subView={documentsSubView} />}
       </div>
     </div>
   );

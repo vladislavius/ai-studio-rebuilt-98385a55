@@ -1,3 +1,4 @@
+import { useState, useCallback } from 'react';
 import { useNavigation } from '@/hooks/useNavigation';
 import { useAuth } from '@/hooks/useAuth';
 import { AppSidebar } from '@/components/AppSidebar';
@@ -16,6 +17,42 @@ import { Loader2 } from 'lucide-react';
 const Index = () => {
   const { session, user, loading, isAdmin, signOut } = useAuth();
   const nav = useNavigation();
+  const [showAddWizard, setShowAddWizard] = useState(false);
+  const [editEmployeeId, setEditEmployeeId] = useState<string | null>(null);
+
+  const handleCommandCenterNavigate = useCallback((target: string) => {
+    if (target === 'employees') {
+      nav.handleViewChange('employees');
+    } else if (target === 'org_chart') {
+      nav.handleViewChange('org_chart');
+    } else if (target === 'statistics') {
+      nav.handleStatisticsView(null);
+    } else if (target === 'academy') {
+      nav.handleViewChange('academy');
+    } else if (target === 'employees_birthdays') {
+      nav.handleViewChange('employees');
+      nav.setEmployeeSubView('birthdays');
+    } else if (target === 'employees_onboarding') {
+      nav.handleViewChange('employees');
+      nav.setEmployeeSubView('onboarding');
+    } else if (target === 'employees_candidates') {
+      nav.handleViewChange('employees');
+      nav.setEmployeeSubView('list');
+      nav.setListSubView('candidates');
+    } else if (target === 'employees_add') {
+      nav.handleViewChange('employees');
+      setShowAddWizard(true);
+    } else if (target.startsWith('employee_')) {
+      const empId = target.replace('employee_', '');
+      nav.handleViewChange('employees');
+      setEditEmployeeId(empId);
+    }
+  }, [nav]);
+
+  const handleAddEmployee = useCallback(() => {
+    nav.handleViewChange('employees');
+    setShowAddWizard(true);
+  }, [nav]);
 
   if (loading) {
     return (
@@ -53,13 +90,13 @@ const Index = () => {
           isAdmin={isAdmin}
           userEmail={user?.email}
           onToggleMobileMenu={nav.toggleMobileMenu}
-          onAddEmployee={() => {}}
+          onAddEmployee={handleAddEmployee}
           onStatisticsView={() => nav.handleStatisticsView(null)}
         />
 
         <div className="flex-1 p-4 md:p-8">
           {nav.currentView === 'command_center' && (
-            <CommandCenterPage isAdmin={isAdmin} />
+            <CommandCenterPage isAdmin={isAdmin} onNavigate={handleCommandCenterNavigate} />
           )}
           {nav.currentView === 'org_chart' && <OrgChartPage />}
           {nav.currentView === 'employees' && isAdmin && (
@@ -70,6 +107,8 @@ const Index = () => {
               setListSubView={nav.setListSubView}
               documentsSubView={nav.documentsSubView}
               setDocumentsSubView={nav.setDocumentsSubView}
+              initialEditId={editEmployeeId}
+              showWizardOnMount={showAddWizard}
             />
           )}
           {nav.currentView === 'academy' && <AcademyPage />}
