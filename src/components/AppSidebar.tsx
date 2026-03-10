@@ -33,6 +33,7 @@ export function AppSidebar({
   onLogout,
 }: AppSidebarProps) {
   const { data: employees } = useEmployees();
+  const { theme, toggleTheme } = useTheme();
   const employeeCount = employees?.length ?? 0;
   const sidebarWidth = isSidebarCollapsed ? 'w-20' : 'w-72';
   const sidebarMobileClasses = isMobileMenuOpen ? '' : '-translate-x-full md:translate-x-0';
