@@ -126,11 +126,11 @@ export function StatisticsPage({ selectedDeptId }: StatisticsPageProps) {
   }, [definitions, selectedDeptId, selectedPeriod, valuesMap]);
 
   const filterButtons = [
-    { id: 'all' as const, label: 'Все', count: stats.total, color: 'bg-primary text-primary-foreground' },
-    { id: 'growing' as const, label: 'Растущие', count: stats.growing, color: 'text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800' },
-    { id: 'declining' as const, label: 'Падающие', count: stats.declining, color: 'text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800' },
-    { id: 'achieved' as const, label: 'Достиг план', count: stats.achieved, color: 'text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800' },
-    { id: 'not_achieved' as const, label: 'Не достиг', count: stats.notAchieved, color: 'text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800' },
+    { id: 'all' as const, label: t('stats.all'), count: stats.total, color: 'bg-primary text-primary-foreground' },
+    { id: 'growing' as const, label: t('stats.growing'), count: stats.growing, color: 'text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800' },
+    { id: 'declining' as const, label: t('stats.declining'), count: stats.declining, color: 'text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800' },
+    { id: 'achieved' as const, label: t('stats.achieved'), count: stats.achieved, color: 'text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800' },
+    { id: 'not_achieved' as const, label: t('stats.not_achieved'), count: stats.notAchieved, color: 'text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800' },
   ];
 
   const shouldRenderStat = (def: typeof definitions[0]) => {
