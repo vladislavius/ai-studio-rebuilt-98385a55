@@ -76,7 +76,7 @@ export function TrainingChat({ courseId, employeeId, stepId, mode }: Props) {
         employee_id: employeeId,
         step_id: mode === 'step_comment' ? stepId : null,
         sender_id: user.id,
-        sender_name: profile?.display_name || user.email || 'Пользователь',
+        sender_name: user.email || 'Пользователь',
         message: text,
         message_type: mode === 'step_comment' ? 'step_comment' : 'chat',
       });
