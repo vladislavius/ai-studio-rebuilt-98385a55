@@ -154,9 +154,20 @@ export function ProgressDashboard() {
                         </div>
                       </td>
                       <td className="p-3">
-                        <span className={`text-[10px] font-display font-bold uppercase px-2 py-1 rounded ${statusColors[status]}`}>
-                          {STATUS_LABELS[status]}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className={`text-[10px] font-display font-bold uppercase px-2 py-1 rounded ${statusColors[status]}`}>
+                            {STATUS_LABELS[status]}
+                          </span>
+                          {(isAdmin || isSupervisor) && status === 'completed' && !p.certified && (
+                            <button
+                              onClick={() => certifyMut.mutate(p.id)}
+                              disabled={certifyMut.isPending}
+                              className="px-2 py-1 bg-primary text-primary-foreground rounded text-[10px] font-display font-bold flex items-center gap-1 hover:bg-primary/90 disabled:opacity-50"
+                            >
+                              <ShieldCheck size={12} /> Сертифицировать
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   );
