@@ -12,9 +12,13 @@ import { GenerateChecksheetModal } from './GenerateChecksheetModal';
 interface ChecksheetItem {
   id: string;
   order: number;
-  type: 'read' | 'write' | 'demo' | 'drill' | 'starrate' | 'clay_demo' | 'checkout' | 'word_clearing';
+  type: 'read' | 'write' | 'demo' | 'drill' | 'starrate' | 'clay_demo' | 'checkout' | 'word_clearing' | 'quiz';
   title: string;
   content: string;
+  critical?: boolean;
+  needsCheckout?: boolean;
+  starred?: boolean;
+  quizQuestions?: { question: string; options: string[]; correctIndex: number }[];
 }
 
 const TYPE_LABELS: Record<string, { label: string; icon: typeof BookOpen }> = {
