@@ -16,6 +16,8 @@ import { AcademyDocsPage } from '@/components/academy/AcademyDocsPage';
 import { GlossaryManager } from '@/components/academy/GlossaryManager';
 import { CheckoutReviewPanel } from '@/components/academy/CheckoutReviewPanel';
 import { BarriersAnalytics } from '@/components/academy/BarriersAnalytics';
+import { ProgramsManager } from '@/components/academy/ProgramsManager';
+import { SupervisorAssignment } from '@/components/academy/SupervisorAssignment';
 
 type View = 'list' | 'detail' | 'study';
 
