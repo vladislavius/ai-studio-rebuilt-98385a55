@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useDepartments } from '@/hooks/useDepartments';
-import { Plus, Search, UserPlus, Trash2, ArrowRight } from 'lucide-react';
+import { Plus, Search, UserPlus, Trash2, ArrowRight, RefreshCw } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 
@@ -45,6 +45,48 @@ export function CandidatesList() {
       if (error) throw error;
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['candidates'] }); toast.success('Кандидат удалён'); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const changeStatusMut = useMutation({
+    mutationFn: async ({ id, status }: { id: string; status: string }) => {
+      const { error } = await supabase.from('candidates').update({ status }).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['candidates'] }); toast.success('Статус обновлён'); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const convertMut = useMutation({
+    mutationFn: async (candidate: NonNullable<typeof candidates>[0]) => {
+      // Create employee from candidate
+      const fullName = [candidate.last_name, candidate.first_name, candidate.middle_name].filter(Boolean).join(' ');
+      const { data: employee, error: empError } = await supabase.from('employees').insert([{
+        full_name: fullName,
+        position: candidate.position || 'Сотрудник',
+        phone: candidate.phone || null,
+        email: candidate.email || null,
+        telegram: candidate.telegram || null,
+        birth_date: candidate.birth_date || null,
+        join_date: new Date().toISOString().slice(0, 10),
+        department_ids: candidate.department_id ? [candidate.department_id] : [],
+      }]).select().single();
+      if (empError) throw empError;
+
+      // Update candidate status
+      const { error: candError } = await supabase.from('candidates').update({
+        status: 'converted',
+        converted_employee_id: employee.id,
+      }).eq('id', candidate.id);
+      if (candError) throw candError;
+
+      return employee;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['candidates'] });
+      qc.invalidateQueries({ queryKey: ['employees'] });
+      toast.success('Кандидат конвертирован в сотрудника');
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 
@@ -110,12 +152,42 @@ export function CandidatesList() {
                   <p className="font-display font-semibold text-foreground text-sm">{c.last_name} {c.first_name} {c.middle_name ?? ''}</p>
                   <p className="text-xs text-muted-foreground font-body">{c.position} {dept ? `• ${dept.name}` : ''}</p>
                 </div>
-                <span className={`text-[10px] px-2 py-0.5 rounded font-display font-bold ${c.status === 'candidate' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' : c.status === 'trainee' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'}`}>
-                  {c.status === 'candidate' ? 'Кандидат' : c.status === 'trainee' ? 'Стажёр' : 'Принят'}
-                </span>
-                <button onClick={() => { if (confirm('Удалить кандидата?')) deleteMut.mutate(c.id); }} className="p-1.5 text-muted-foreground hover:text-destructive rounded transition-colors">
-                  <Trash2 size={14} />
-                </button>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  {/* Status badge with dropdown */}
+                  <select
+                    value={c.status}
+                    onChange={e => changeStatusMut.mutate({ id: c.id, status: e.target.value })}
+                    disabled={c.status === 'converted'}
+                    className={`text-[10px] px-2 py-1 rounded font-display font-bold border-0 cursor-pointer ${
+                      c.status === 'candidate' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' :
+                      c.status === 'trainee' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' :
+                      'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+                    }`}
+                  >
+                    <option value="candidate">Кандидат</option>
+                    <option value="trainee">Стажёр</option>
+                    <option value="converted">Принят</option>
+                  </select>
+
+                  {/* Convert to employee */}
+                  {c.status !== 'converted' && (
+                    <button
+                      onClick={() => { if (confirm(`Конвертировать ${c.last_name} ${c.first_name} в сотрудника?`)) convertMut.mutate(c); }}
+                      className="p-1.5 text-primary hover:bg-primary/10 rounded transition-colors"
+                      title="Конвертировать в сотрудника"
+                    >
+                      <ArrowRight size={14} />
+                    </button>
+                  )}
+
+                  {c.status === 'converted' && c.converted_employee_id && (
+                    <span className="text-[10px] text-emerald-600 font-display font-bold">✓ В системе</span>
+                  )}
+
+                  <button onClick={() => { if (confirm('Удалить кандидата?')) deleteMut.mutate(c.id); }} className="p-1.5 text-muted-foreground hover:text-destructive rounded transition-colors">
+                    <Trash2 size={14} />
+                  </button>
+                </div>
               </div>
             );
           })}
