@@ -344,7 +344,7 @@ export function StatisticsPage({ selectedDeptId }: StatisticsPageProps) {
                 </div>
                 <h2 className="text-xs font-display font-bold text-foreground uppercase tracking-tight">{dept.full_name || dept.name}</h2>
               </div>
-              <span className="text-[9px] text-muted-foreground font-display font-bold uppercase">ГЛАВНЫЕ ПОКАЗАТЕЛИ (ГСД)</span>
+              <span className="text-[9px] text-muted-foreground font-display font-bold uppercase">{t('stats.main_indicators')}</span>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
               {visibleStats.map(stat => (
