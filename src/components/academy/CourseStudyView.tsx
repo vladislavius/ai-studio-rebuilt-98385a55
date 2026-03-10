@@ -17,7 +17,10 @@ const TYPE_META: Record<string, { label: string; icon: typeof BookOpen; color: s
   read: { label: 'Прочитать', icon: BookOpen, color: 'text-blue-500' },
   write: { label: 'Написать', icon: PenLine, color: 'text-amber-500' },
   demo: { label: 'Демо', icon: Eye, color: 'text-emerald-500' },
+  clay_demo: { label: 'Глиняное демо', icon: Sparkles, color: 'text-teal-500' },
   drill: { label: 'Упражнение', icon: Dumbbell, color: 'text-purple-500' },
+  checkout: { label: 'Чек-аут', icon: ClipboardCheck, color: 'text-rose-500' },
+  word_clearing: { label: 'Прояснение слов', icon: Search, color: 'text-cyan-500' },
   starrate: { label: 'Звёздная оценка', icon: Star, color: 'text-orange-500' },
 };
 
