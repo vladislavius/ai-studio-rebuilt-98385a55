@@ -30,6 +30,7 @@ const TYPE_LABELS: Record<string, { label: string; icon: typeof BookOpen }> = {
   checkout: { label: 'Чек-аут', icon: ClipboardCheck },
   word_clearing: { label: 'Прояснение слов', icon: Search },
   starrate: { label: 'Звёздная оценка', icon: Star },
+  quiz: { label: 'Тест', icon: FileQuestion },
 };
 
 interface Props {
