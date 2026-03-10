@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, BookOpen, PenLine, Eye, Dumbbell, Star, Check, Award } from 'lucide-react';
+import { ArrowLeft, BookOpen, PenLine, Eye, Dumbbell, Star, Check, Award, Sparkles, Search, ClipboardCheck } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Progress } from '@/components/ui/progress';
