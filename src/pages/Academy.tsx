@@ -135,6 +135,14 @@ export function AcademyPage() {
               <AlertTriangle size={14} /> <EditableLabel labelKey="academy.tab.barriers" />
             </TabsTrigger>
           )}
+          <TabsTrigger value="programs" className="flex items-center gap-1.5">
+            <Layers size={14} /> <EditableLabel labelKey="academy.tab.programs" />
+          </TabsTrigger>
+          {isAdmin && (
+            <TabsTrigger value="supervisors" className="flex items-center gap-1.5">
+              <Users size={14} /> <EditableLabel labelKey="academy.tab.supervisors" />
+            </TabsTrigger>
+          )}
           <TabsTrigger value="docs" className="flex items-center gap-1.5">
             <FileText size={14} /> <EditableLabel labelKey="academy.tab.docs" />
           </TabsTrigger>
