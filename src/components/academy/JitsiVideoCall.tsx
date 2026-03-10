@@ -20,7 +20,7 @@ export function JitsiVideoCall({ courseId, employeeId, courseName }: Props) {
     return (
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-20 right-20 z-50 w-12 h-12 bg-emerald-600 text-white rounded-full shadow-lg flex items-center justify-center hover:bg-emerald-700 transition-all"
+        className="fixed bottom-20 right-20 z-50 w-12 h-12 bg-accent-foreground text-background rounded-full shadow-lg flex items-center justify-center hover:opacity-90 transition-all"
         title="Видеозвонок с куратором"
       >
         <Video size={20} />
