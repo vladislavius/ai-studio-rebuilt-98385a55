@@ -87,7 +87,7 @@ export function AcademyPage() {
     return <CourseChecksheet courseId={selectedCourseId} onBack={backToList} />;
   }
   if (view === 'study' && selectedCourseId) {
-    return <CourseStudyView courseId={selectedCourseId} onBack={backToList} />;
+    return <CourseStudyView courseId={selectedCourseId} onBack={backToList} employeeId={myEmployee?.id} />;
   }
 
   if (isLoading) return <div className="text-center py-12 text-muted-foreground text-sm">{t('academy.loading')}</div>;
