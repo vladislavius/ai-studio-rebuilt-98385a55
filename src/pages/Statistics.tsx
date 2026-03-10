@@ -368,12 +368,21 @@ export function StatisticsPage({ selectedDeptId }: StatisticsPageProps) {
             </button>
           </div>
 
-          {/* Action buttons placeholder */}
+          {/* Action buttons */}
           <div className="flex gap-2">
-            <button className="p-2 rounded-lg border border-border text-muted-foreground hover:text-foreground hover:bg-accent transition-colors" title="Скачать CSV">
+            <button
+              onClick={handleExportCSV}
+              className="p-2 rounded-lg border border-border text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+              title="Скачать CSV"
+            >
               <Download size={16} />
             </button>
-            <button className="p-2 rounded-lg border border-border text-muted-foreground hover:text-foreground hover:bg-accent transition-colors" title="Импорт">
+            <input ref={fileInputRef} type="file" accept=".csv" className="hidden" onChange={handleImportCSV} />
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="p-2 rounded-lg border border-border text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+              title="Импорт CSV"
+            >
               <Upload size={16} />
             </button>
           </div>
