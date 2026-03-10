@@ -347,7 +347,7 @@ export function DepartmentDetailPanel({ dept, allDepts, employees, onClose, isAd
               {children.map(child => {
                 const childEmps = employees.filter(e =>
                   (e.department_ids ?? []).includes(child.id) ||
-                  ((e as any).subdepartment_ids ?? []).some((id: string) => id === child.id)
+                  (e.subdepartment_ids ?? []).some(id => id === child.id)
                 );
                 return (
                   <div key={child.id} className="bg-muted/30 border border-border rounded-xl overflow-hidden group/child">
