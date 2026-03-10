@@ -32,7 +32,10 @@ export function OrgChartPage() {
     allDepts.filter(d => d.parent_id === parentId).sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
 
   const getEmployeeCount = (deptId: string) =>
-    emps.filter(e => (e.department_ids ?? []).includes(deptId)).length;
+    emps.filter(e =>
+      (e.department_ids ?? []).includes(deptId) ||
+      (e.subdepartment_ids ?? []).includes(deptId)
+    ).length;
 
   const getTotalEmployeeCount = (deptId: string) => {
     const children = getChildren(deptId);

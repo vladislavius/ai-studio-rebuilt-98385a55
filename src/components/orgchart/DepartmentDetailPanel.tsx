@@ -16,6 +16,7 @@ interface Props {
     full_name: string;
     position: string;
     department_ids: string[] | null;
+    subdepartment_ids?: string[] | null;
     photo_url?: string | null;
     nickname?: string | null;
     phone?: string | null;
@@ -57,7 +58,10 @@ export function DepartmentDetailPanel({ dept, allDepts, employees, onClose, isAd
 
   const children = allDepts.filter(d => d.parent_id === dept.id).sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
   const deptAndChildIds = [dept.id, ...children.map(c => c.id)];
-  const deptEmployees = employees.filter(e => (e.department_ids ?? []).some(id => deptAndChildIds.includes(id)));
+  const deptEmployees = employees.filter(e =>
+    (e.department_ids ?? []).some(id => deptAndChildIds.includes(id)) ||
+    (e.subdepartment_ids ?? []).some(id => deptAndChildIds.includes(id))
+  );
   const filteredEmployees = deptEmployees.filter(e =>
     e.full_name.toLowerCase().includes(search.toLowerCase())
   );
@@ -341,7 +345,10 @@ export function DepartmentDetailPanel({ dept, allDepts, employees, onClose, isAd
             </p>
             <div className="space-y-3">
               {children.map(child => {
-                const childEmps = employees.filter(e => (e.department_ids ?? []).includes(child.id));
+                const childEmps = employees.filter(e =>
+                  (e.department_ids ?? []).includes(child.id) ||
+                  (e.subdepartment_ids ?? []).some(id => id === child.id)
+                );
                 return (
                   <div key={child.id} className="bg-muted/30 border border-border rounded-xl overflow-hidden group/child">
                     <div className="h-1" style={{ backgroundColor: child.color ?? dept.color ?? 'hsl(var(--primary))' }} />
