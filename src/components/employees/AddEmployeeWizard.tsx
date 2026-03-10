@@ -182,7 +182,25 @@ export function AddEmployeeWizard({ onClose }: AddEmployeeWizardProps) {
     };
 
     try {
-      await createMut.mutateAsync(payload as any);
+      const employee = await createMut.mutateAsync(payload as any);
+
+      // Create onboarding instance if plan selected
+      if (data.onboarding_plan !== 'none' && employee?.id) {
+        const targetDate = new Date();
+        if (data.onboarding_plan === 'standard_3m') targetDate.setMonth(targetDate.getMonth() + 3);
+        else if (data.onboarding_plan === 'fast_1m') targetDate.setMonth(targetDate.getMonth() + 1);
+        else targetDate.setMonth(targetDate.getMonth() + 2);
+
+        await supabase.from('onboarding_instances').insert([{
+          employee_id: employee.id,
+          start_date: new Date().toISOString().slice(0, 10),
+          target_completion_date: targetDate.toISOString().slice(0, 10),
+          status: 'in_progress',
+          progress_percentage: 0,
+          tasks: [],
+        }]);
+      }
+
       onClose();
     } catch {}
   };
