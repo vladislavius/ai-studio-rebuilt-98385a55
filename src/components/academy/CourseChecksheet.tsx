@@ -9,6 +9,7 @@ import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
 import { GenerateChecksheetModal } from './GenerateChecksheetModal';
 import { RichTextEditor } from './RichTextEditor';
+import { QuizQuestionEditor } from './QuizQuestionEditor';
 
 interface ChecksheetItem {
   id: string;
