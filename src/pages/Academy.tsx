@@ -98,8 +98,11 @@ export function AcademyPage() {
           <TabsTrigger value="courses" className="flex items-center gap-1.5">
             <ClipboardList size={14} /> Курсы
           </TabsTrigger>
-          <TabsTrigger value="progress" className="flex items-center gap-1.5">
+           <TabsTrigger value="progress" className="flex items-center gap-1.5">
             <BarChart3 size={14} /> Прогресс
+          </TabsTrigger>
+          <TabsTrigger value="docs" className="flex items-center gap-1.5">
+            <FileText size={14} /> Документация
           </TabsTrigger>
         </TabsList>
 
