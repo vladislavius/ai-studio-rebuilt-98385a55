@@ -11,6 +11,8 @@ import { OnboardingList } from '@/components/employees/OnboardingList';
 import { ReportsList } from '@/components/employees/ReportsList';
 import { DocumentsList } from '@/components/employees/DocumentsList';
 import { useEmployees } from '@/hooks/useEmployees';
+import { useLabels } from '@/hooks/useLabels';
+import { EditableLabel } from '@/components/ui/editable-label';
 import { TubelightTabs } from '@/components/ui/tubelight-tabs';
 
 interface EmployeesPageProps {
@@ -38,6 +40,7 @@ export function EmployeesPage({
   const [showWizard, setShowWizard] = useState(!!showWizardOnMount);
   const [editId, setEditId] = useState<string | null>(initialEditId ?? null);
   const { data: employees } = useEmployees();
+  const { t } = useLabels();
 
   const openCreate = () => { setShowWizard(true); };
   const openEdit = (id: string) => { setEditId(id); setShowForm(true); };
@@ -49,7 +52,6 @@ export function EmployeesPage({
       {showForm && <EmployeeForm employeeId={editId} onClose={closeForm} />}
       {showWizard && <AddEmployeeWizard onClose={closeWizard} />}
 
-      {/* Tab bar */}
       <div className="bg-card p-4 md:p-5 rounded-xl border border-border space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <TubelightTabs
@@ -62,7 +64,7 @@ export function EmployeesPage({
           <div className="flex items-center gap-3">
             {employeeSubView === 'list' && employees && (
               <span className="text-xs font-display font-semibold text-muted-foreground bg-accent px-3 py-1.5 rounded-lg">
-                ВСЕГО: {employees.length}
+                {t('emp.total')}: {employees.length}
               </span>
             )}
             {employeeSubView === 'list' && (
@@ -71,7 +73,7 @@ export function EmployeesPage({
                 className="px-4 py-2 bg-primary text-primary-foreground font-display font-bold rounded-xl hover:bg-primary/90 transition-all flex items-center gap-2 text-sm"
               >
                 <Plus size={16} />
-                <span className="hidden sm:inline">Сотрудник</span>
+                <span className="hidden sm:inline">{t('emp.add')}</span>
               </button>
             )}
           </div>
@@ -96,7 +98,6 @@ export function EmployeesPage({
         )}
       </div>
 
-      {/* Content area */}
       <div className="bg-card border border-border rounded-xl p-5">
         {employeeSubView === 'list' && listSubView === 'employees' && (
           <EmployeeList onEdit={openEdit} />
