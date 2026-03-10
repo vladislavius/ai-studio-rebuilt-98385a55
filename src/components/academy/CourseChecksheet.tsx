@@ -200,16 +200,68 @@ export function CourseChecksheet({ courseId, onBack }: Props) {
     }
   }, [course]);
 
+  // Fetch version history
+  const { data: versions } = useQuery({
+    queryKey: ['course-versions', courseId],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('course_versions')
+        .select('*').eq('course_id', courseId).order('version_number', { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+
   const saveMut = useMutation({
     mutationFn: async () => {
       const ordered = items.map((it, i) => ({ ...it, order: i + 1 }));
+
+      // Save version snapshot before updating
+      const nextVersion = (versions?.length ?? 0) + 1;
+      await supabase.from('course_versions').insert({
+        course_id: courseId,
+        version_number: nextVersion,
+        title: course?.title || title,
+        description: course?.description || description,
+        sections: (course?.sections || []) as any,
+        is_hst_course: course?.is_hst_course || false,
+        duration_hours: course?.duration_hours,
+        change_note: `Версия ${nextVersion}`,
+      });
+
       const { error } = await supabase.from('courses').update({
         title, description: description || null, is_hst_course: isHst,
         sections: ordered as any,
       }).eq('id', courseId);
       if (error) throw error;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['courses'] }); qc.invalidateQueries({ queryKey: ['course', courseId] }); toast.success('Контрольный лист сохранён'); },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['courses'] });
+      qc.invalidateQueries({ queryKey: ['course', courseId] });
+      qc.invalidateQueries({ queryKey: ['course-versions', courseId] });
+      toast.success('Контрольный лист сохранён (версия создана)');
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const restoreVersionMut = useMutation({
+    mutationFn: async (versionId: string) => {
+      const version = versions?.find(v => v.id === versionId);
+      if (!version) throw new Error('Версия не найдена');
+      const { error } = await supabase.from('courses').update({
+        title: version.title,
+        description: version.description,
+        sections: version.sections as any,
+        is_hst_course: version.is_hst_course,
+        duration_hours: version.duration_hours,
+      }).eq('id', courseId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['courses'] });
+      qc.invalidateQueries({ queryKey: ['course', courseId] });
+      toast.success('Версия восстановлена');
+      setShowHistory(false);
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 
