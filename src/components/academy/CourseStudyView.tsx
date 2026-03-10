@@ -10,6 +10,8 @@ import { StepArtifactUpload } from './StepArtifactUpload';
 import { QuizStep } from './QuizStep';
 import { CourseCertificate } from './CourseCertificate';
 import { RichTextViewer, RichTextEditor } from './RichTextEditor';
+import { TrainingChat } from './TrainingChat';
+import { JitsiVideoCall } from './JitsiVideoCall';
 
 interface ChecksheetItem {
   id: string;
