@@ -267,11 +267,13 @@ export function CourseStudyView({ courseId, onBack, employeeId }: Props) {
               const Icon = meta.icon;
               const done = isItemCompleted(item.id);
               const isActive = idx === activeIdx;
-              const blocked = isStepBlocked(item);
+              const blocked = isStepBlocked(item, idx);
+              const locked = employeeId ? isStepLocked(idx) : false;
               return (
                 <button
                   key={item.id}
-                  onClick={() => setActiveIdx(idx)}
+                  onClick={() => { if (!locked) setActiveIdx(idx); }}
+                  disabled={locked}
                   className={`w-full text-left p-3 flex items-start gap-2.5 border-b border-border/50 transition-colors ${isActive ? 'bg-primary/5 border-l-2 border-l-primary' : 'hover:bg-accent/50'}`}
                 >
                   <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${done ? 'bg-primary text-primary-foreground' : blocked.blocked ? 'border border-amber-500 bg-amber-500/10' : 'border border-border'}`}>
