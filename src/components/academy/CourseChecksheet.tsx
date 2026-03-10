@@ -203,8 +203,12 @@ export function CourseChecksheet({ courseId, onBack }: Props) {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const [newItemId, setNewItemId] = useState<string | null>(null);
+
   const addItem = () => {
-    setItems(prev => [...prev, { id: crypto.randomUUID(), order: prev.length + 1, type: 'read', title: '', content: '', critical: false, needsCheckout: false, starred: false }]);
+    const id = crypto.randomUUID();
+    setNewItemId(id);
+    setItems(prev => [...prev, { id, order: prev.length + 1, type: 'read', title: '', content: '', critical: false, needsCheckout: false, starred: false }]);
   };
 
   const removeItem = (id: string) => setItems(prev => prev.filter(it => it.id !== id));
