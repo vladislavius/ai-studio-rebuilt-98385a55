@@ -4,6 +4,7 @@ import { useStatisticDefinitions, useAllStatisticValues, useStatisticValues, use
 import { useUpdateStatDefinition, useDeleteStatDefinition } from '@/hooks/useOrgChartMutations';
 import { useDepartments, DBDepartment } from '@/hooks/useDepartments';
 import { useEmployees } from '@/hooks/useEmployees';
+import { useLabels } from '@/hooks/useLabels';
 import { StatCard } from '@/components/statistics/StatCard';
 import { PERIODS, PeriodType, getFilteredValues, analyzeTrend, calculateCondition, getConditionInfo, CONDITIONS, calculateTrendLine, StatCondition } from '@/utils/statistics';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, AreaChart, Area } from 'recharts';
