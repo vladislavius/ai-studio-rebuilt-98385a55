@@ -118,12 +118,15 @@ export function StatisticsPage({ selectedDeptId }: StatisticsPageProps) {
   const expandedChartData = useMemo(() => {
     if (!expandedStatId || !expandedValues?.length) return [];
     const sorted = [...expandedValues].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-    const filtered = getFilteredValues(sorted.map(v => ({ date: v.date, value: Number(v.value), value2: v.value2 != null ? Number(v.value2) : null })), selectedPeriod);
-    return filtered.map(v => ({
+    const mapped = sorted.map(v => ({ date: v.date, value: Number(v.value), value2: v.value2 != null ? Number(v.value2) : null }));
+    const filtered = getFilteredValues(mapped, selectedPeriod);
+    const trendData = calculateTrendLine(filtered);
+    return filtered.map((v, i) => ({
       date: new Date(v.date).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' }),
       rawDate: v.date,
       fact: v.value,
       plan: (v as any).value2 ?? null,
+      trend: trendData[i]?.trend ?? v.value,
     }));
   }, [expandedStatId, expandedValues, selectedPeriod]);
 
