@@ -16,6 +16,7 @@ interface Props {
     full_name: string;
     position: string;
     department_ids: string[] | null;
+    subdepartment_ids?: string[] | null;
     photo_url?: string | null;
     nickname?: string | null;
     phone?: string | null;
