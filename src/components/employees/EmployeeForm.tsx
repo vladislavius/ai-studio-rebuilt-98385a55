@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { useCreateEmployee, useUpdateEmployee, useEmployees } from '@/hooks/useEmployees';
 import { useDepartments } from '@/hooks/useDepartments';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import {
