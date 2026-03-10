@@ -34,6 +34,69 @@ const TYPE_LABELS: Record<string, { label: string; icon: typeof BookOpen }> = {
   quiz: { label: 'Тест', icon: FileQuestion },
 };
 
+function ChecksheetItemEditor({ item, idx, totalItems, onUpdateItem, onMoveItem, onRemoveItem, onToggleFlag }: {
+  item: ChecksheetItem; idx: number; totalItems: number;
+  onUpdateItem: (id: string, field: keyof ChecksheetItem, value: string) => void;
+  onMoveItem: (index: number, dir: -1 | 1) => void;
+  onRemoveItem: (id: string) => void;
+  onToggleFlag: (id: string, flag: 'critical' | 'needsCheckout' | 'starred') => void;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  return (
+    <div className="bg-card border border-border rounded-xl p-4 space-y-2">
+      <div className="flex items-center gap-2">
+        <span className="text-xs font-display font-bold text-muted-foreground w-6 text-center">{idx + 1}</span>
+        <div className="w-36">
+          <Select value={item.type} onValueChange={v => onUpdateItem(item.id, 'type', v)}>
+            <SelectTrigger className="h-8 text-xs bg-background"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {Object.entries(TYPE_LABELS).map(([key, { label }]) => (
+                <SelectItem key={key} value={key}>{label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <Input value={item.title} onChange={e => onUpdateItem(item.id, 'title', e.target.value)} placeholder="Заголовок задания" className="flex-1 h-8 text-xs bg-background" />
+        <button onClick={() => setExpanded(!expanded)} className="p-1 rounded hover:bg-accent text-muted-foreground">
+          <ChevronRight size={14} className={`transition-transform ${expanded ? 'rotate-90' : ''}`} />
+        </button>
+        <div className="flex gap-0.5">
+          <button onClick={() => onMoveItem(idx, -1)} disabled={idx === 0} className="p-1 rounded hover:bg-accent text-muted-foreground disabled:opacity-30"><ChevronUp size={14} /></button>
+          <button onClick={() => onMoveItem(idx, 1)} disabled={idx === totalItems - 1} className="p-1 rounded hover:bg-accent text-muted-foreground disabled:opacity-30"><ChevronDown size={14} /></button>
+          <button onClick={() => onRemoveItem(item.id)} className="p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive"><Trash2 size={14} /></button>
+        </div>
+      </div>
+      {expanded && (
+        <div className="space-y-3 pt-2">
+          <div>
+            <label className="text-[10px] font-display font-bold text-muted-foreground uppercase block mb-1">Учебный материал (WYSIWYG)</label>
+            <RichTextEditor
+              content={item.content || ''}
+              onChange={html => onUpdateItem(item.id, 'content', html)}
+              placeholder="Текст задания, материал для изучения, инструкции..."
+              minHeight="150px"
+            />
+          </div>
+          <div className="flex items-center gap-3 flex-wrap">
+            <label className="flex items-center gap-1.5 text-[10px] font-display cursor-pointer">
+              <input type="checkbox" checked={item.critical || false} onChange={() => onToggleFlag(item.id, 'critical')} className="rounded" />
+              <span className="text-destructive font-bold">🔴 Критический</span>
+            </label>
+            <label className="flex items-center gap-1.5 text-[10px] font-display cursor-pointer">
+              <input type="checkbox" checked={item.needsCheckout || false} onChange={() => onToggleFlag(item.id, 'needsCheckout')} className="rounded" />
+              <span className="text-rose-500 font-bold">✅ Нужен чек-аут</span>
+            </label>
+            <label className="flex items-center gap-1.5 text-[10px] font-display cursor-pointer">
+              <input type="checkbox" checked={item.starred || false} onChange={() => onToggleFlag(item.id, 'starred')} className="rounded" />
+              <span className="text-amber-500 font-bold">⭐ Звёздочный</span>
+            </label>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 interface Props {
   courseId: string;
   onBack: () => void;
