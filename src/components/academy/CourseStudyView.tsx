@@ -180,6 +180,24 @@ export function CourseStudyView({ courseId, onBack, employeeId }: Props) {
                 </div>
               )}
 
+              {/* Word Clearing button */}
+              {employeeId && (
+                <button onClick={() => setShowWordClearing(!showWordClearing)}
+                  className="px-4 py-2 border border-border rounded-lg text-xs font-display font-bold text-muted-foreground hover:bg-accent flex items-center gap-1.5">
+                  <HelpCircle size={14} /> {showWordClearing ? 'Скрыть прояснение слов' : 'Не понимаю слово'}
+                </button>
+              )}
+
+              {/* Word Clearing Panel */}
+              {showWordClearing && employeeId && activeItem && (
+                <WordClearingPanel
+                  courseId={courseId}
+                  employeeId={employeeId}
+                  stepId={activeItem.id}
+                  onClose={() => setShowWordClearing(false)}
+                />
+              )}
+
               {employeeId && !isItemCompleted(activeItem.id) && (
                 <button
                   onClick={() => completeMut.mutate(activeItem.id)}
