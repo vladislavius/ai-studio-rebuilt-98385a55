@@ -307,6 +307,7 @@ export function CourseChecksheet({ courseId, onBack }: Props) {
             onMoveItem={moveItem}
             onRemoveItem={removeItem}
             onToggleFlag={toggleFlag}
+            isNew={item.id === newItemId}
           />
         ))}
       </div>
