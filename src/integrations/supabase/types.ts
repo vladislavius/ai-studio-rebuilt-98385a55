@@ -122,6 +122,63 @@ export type Database = {
           },
         ]
       }
+      checkout_requests: {
+        Row: {
+          course_id: string
+          employee_id: string
+          id: string
+          questions: Json | null
+          requested_at: string
+          result: Json | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          step_id: string
+          supervisor_notes: string | null
+        }
+        Insert: {
+          course_id: string
+          employee_id: string
+          id?: string
+          questions?: Json | null
+          requested_at?: string
+          result?: Json | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          step_id: string
+          supervisor_notes?: string | null
+        }
+        Update: {
+          course_id?: string
+          employee_id?: string
+          id?: string
+          questions?: Json | null
+          requested_at?: string
+          result?: Json | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          step_id?: string
+          supervisor_notes?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "checkout_requests_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "checkout_requests_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       company_settings: {
         Row: {
           id: string
@@ -842,6 +899,63 @@ export type Database = {
             columns: ["definition_id"]
             isOneToOne: false
             referencedRelation: "statistic_definitions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      step_artifacts: {
+        Row: {
+          course_id: string
+          employee_id: string
+          file_name: string
+          file_size: number | null
+          file_type: string | null
+          id: string
+          public_url: string | null
+          step_id: string
+          storage_path: string
+          uploaded_at: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          course_id: string
+          employee_id: string
+          file_name: string
+          file_size?: number | null
+          file_type?: string | null
+          id?: string
+          public_url?: string | null
+          step_id: string
+          storage_path: string
+          uploaded_at?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          course_id?: string
+          employee_id?: string
+          file_name?: string
+          file_size?: number | null
+          file_type?: string | null
+          id?: string
+          public_url?: string | null
+          step_id?: string
+          storage_path?: string
+          uploaded_at?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "step_artifacts_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "step_artifacts_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
             referencedColumns: ["id"]
           },
         ]

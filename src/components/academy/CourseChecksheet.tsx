@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, Plus, Trash2, ChevronUp, ChevronDown, Save, UserPlus, BookOpen, PenLine, Eye as EyeIcon, Dumbbell, Star, Sparkles, Search, MessageSquare, ClipboardCheck } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, ChevronUp, ChevronDown, Save, UserPlus, BookOpen, PenLine, Eye as EyeIcon, Dumbbell, Star, Sparkles, Search, MessageSquare, ClipboardCheck, FileQuestion } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Input } from '@/components/ui/input';
@@ -12,9 +12,13 @@ import { GenerateChecksheetModal } from './GenerateChecksheetModal';
 interface ChecksheetItem {
   id: string;
   order: number;
-  type: 'read' | 'write' | 'demo' | 'drill' | 'starrate' | 'clay_demo' | 'checkout' | 'word_clearing';
+  type: 'read' | 'write' | 'demo' | 'drill' | 'starrate' | 'clay_demo' | 'checkout' | 'word_clearing' | 'quiz';
   title: string;
   content: string;
+  critical?: boolean;
+  needsCheckout?: boolean;
+  starred?: boolean;
+  quizQuestions?: { question: string; options: string[]; correctIndex: number }[];
 }
 
 const TYPE_LABELS: Record<string, { label: string; icon: typeof BookOpen }> = {
@@ -26,6 +30,7 @@ const TYPE_LABELS: Record<string, { label: string; icon: typeof BookOpen }> = {
   checkout: { label: 'Чек-аут', icon: ClipboardCheck },
   word_clearing: { label: 'Прояснение слов', icon: Search },
   starrate: { label: 'Звёздная оценка', icon: Star },
+  quiz: { label: 'Тест', icon: FileQuestion },
 };
 
 interface Props {
@@ -109,10 +114,14 @@ export function CourseChecksheet({ courseId, onBack }: Props) {
   });
 
   const addItem = () => {
-    setItems(prev => [...prev, { id: crypto.randomUUID(), order: prev.length + 1, type: 'read', title: '', content: '' }]);
+    setItems(prev => [...prev, { id: crypto.randomUUID(), order: prev.length + 1, type: 'read', title: '', content: '', critical: false, needsCheckout: false, starred: false }]);
   };
 
   const removeItem = (id: string) => setItems(prev => prev.filter(it => it.id !== id));
+
+  const toggleFlag = (id: string, flag: 'critical' | 'needsCheckout' | 'starred') => {
+    setItems(prev => prev.map(it => it.id === id ? { ...it, [flag]: !it[flag] } : it));
+  };
 
   const moveItem = (index: number, dir: -1 | 1) => {
     const newItems = [...items];
@@ -216,6 +225,20 @@ export function CourseChecksheet({ courseId, onBack }: Props) {
               </div>
             </div>
             <Textarea value={item.content} onChange={e => updateItem(item.id, 'content', e.target.value)} placeholder="Текст задания, ссылка на материал или содержание статьи..." rows={2} className="text-xs bg-background resize-none" />
+            <div className="flex items-center gap-3 flex-wrap">
+              <label className="flex items-center gap-1.5 text-[10px] font-display cursor-pointer">
+                <input type="checkbox" checked={item.critical || false} onChange={() => toggleFlag(item.id, 'critical')} className="rounded" />
+                <span className="text-destructive font-bold">🔴 Критический</span>
+              </label>
+              <label className="flex items-center gap-1.5 text-[10px] font-display cursor-pointer">
+                <input type="checkbox" checked={item.needsCheckout || false} onChange={() => toggleFlag(item.id, 'needsCheckout')} className="rounded" />
+                <span className="text-rose-500 font-bold">✅ Нужен чек-аут</span>
+              </label>
+              <label className="flex items-center gap-1.5 text-[10px] font-display cursor-pointer">
+                <input type="checkbox" checked={item.starred || false} onChange={() => toggleFlag(item.id, 'starred')} className="rounded" />
+                <span className="text-amber-500 font-bold">⭐ Звёздочный</span>
+              </label>
+            </div>
           </div>
         ))}
       </div>
