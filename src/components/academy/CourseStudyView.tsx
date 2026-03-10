@@ -201,7 +201,21 @@ export function CourseStudyView({ courseId, onBack, employeeId }: Props) {
   const isItemCompleted = (id: string) => completedIds.includes(id);
   const allComplete = progressPercent >= 100;
 
-  const isStepBlocked = (item: ChecksheetItem): { blocked: boolean; reason: string } => {
+  // Check if a step is accessible (sequential locking)
+  const isStepLocked = (idx: number): boolean => {
+    if (idx === 0) return false;
+    // All previous steps must be completed
+    for (let i = 0; i < idx; i++) {
+      if (!completedIds.includes(items[i].id)) return true;
+    }
+    return false;
+  };
+
+  const isStepBlocked = (item: ChecksheetItem, idx?: number): { blocked: boolean; reason: string } => {
+    // Sequential lock check
+    if (idx !== undefined && employeeId && isStepLocked(idx)) {
+      return { blocked: true, reason: 'Сначала выполните предыдущие шаги' };
+    }
     if ((item.type === 'checkout' || item.needsCheckout) && employeeId) {
       const req = checkoutRequests?.find(r => r.step_id === item.id);
       if (!req) return { blocked: true, reason: 'Требуется чек-аут супервизора' };
