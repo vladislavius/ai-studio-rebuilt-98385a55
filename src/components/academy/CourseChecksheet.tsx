@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, Plus, Trash2, ChevronUp, ChevronDown, Save, UserPlus, BookOpen, PenLine, Eye as EyeIcon, Dumbbell, Star, Sparkles, Search, MessageSquare, ClipboardCheck, FileQuestion, FileText, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, ChevronUp, ChevronDown, Save, UserPlus, BookOpen, PenLine, Eye as EyeIcon, Dumbbell, Star, Sparkles, Search, MessageSquare, ClipboardCheck, FileQuestion, FileText, AlertTriangle, CheckCircle2, History, RotateCcw } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Input } from '@/components/ui/input';
@@ -160,6 +160,7 @@ export function CourseChecksheet({ courseId, onBack }: Props) {
   const [isHst, setIsHst] = useState(false);
   const [showAssign, setShowAssign] = useState(false);
   const [showGenerate, setShowGenerate] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
   const [selectedEmployees, setSelectedEmployees] = useState<string[]>([]);
 
   const { data: course, isLoading } = useQuery({
@@ -199,16 +200,68 @@ export function CourseChecksheet({ courseId, onBack }: Props) {
     }
   }, [course]);
 
+  // Fetch version history
+  const { data: versions } = useQuery({
+    queryKey: ['course-versions', courseId],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('course_versions')
+        .select('*').eq('course_id', courseId).order('version_number', { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+
   const saveMut = useMutation({
     mutationFn: async () => {
       const ordered = items.map((it, i) => ({ ...it, order: i + 1 }));
+
+      // Save version snapshot before updating
+      const nextVersion = (versions?.length ?? 0) + 1;
+      await supabase.from('course_versions').insert({
+        course_id: courseId,
+        version_number: nextVersion,
+        title: course?.title || title,
+        description: course?.description || description,
+        sections: (course?.sections || []) as any,
+        is_hst_course: course?.is_hst_course || false,
+        duration_hours: course?.duration_hours,
+        change_note: `Версия ${nextVersion}`,
+      });
+
       const { error } = await supabase.from('courses').update({
         title, description: description || null, is_hst_course: isHst,
         sections: ordered as any,
       }).eq('id', courseId);
       if (error) throw error;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['courses'] }); qc.invalidateQueries({ queryKey: ['course', courseId] }); toast.success('Контрольный лист сохранён'); },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['courses'] });
+      qc.invalidateQueries({ queryKey: ['course', courseId] });
+      qc.invalidateQueries({ queryKey: ['course-versions', courseId] });
+      toast.success('Контрольный лист сохранён (версия создана)');
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const restoreVersionMut = useMutation({
+    mutationFn: async (versionId: string) => {
+      const version = versions?.find(v => v.id === versionId);
+      if (!version) throw new Error('Версия не найдена');
+      const { error } = await supabase.from('courses').update({
+        title: version.title,
+        description: version.description,
+        sections: version.sections as any,
+        is_hst_course: version.is_hst_course,
+        duration_hours: version.duration_hours,
+      }).eq('id', courseId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['courses'] });
+      qc.invalidateQueries({ queryKey: ['course', courseId] });
+      toast.success('Версия восстановлена');
+      setShowHistory(false);
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 
@@ -273,6 +326,9 @@ export function CourseChecksheet({ courseId, onBack }: Props) {
           <h1 className="text-xl font-display font-bold text-foreground">Контрольный лист</h1>
           <p className="text-xs text-muted-foreground font-body">{items.length} пунктов • Назначено: {assignedIds.size} сотр.</p>
         </div>
+        <button onClick={() => setShowHistory(!showHistory)} className="px-3 py-2 border border-border rounded-lg text-xs font-display font-bold text-muted-foreground hover:bg-accent flex items-center gap-1.5">
+          <History size={14} /> Версии{versions?.length ? ` (${versions.length})` : ''}
+        </button>
         <button onClick={() => setShowAssign(true)} className="px-3 py-2 border border-border rounded-lg text-xs font-display font-bold text-muted-foreground hover:bg-accent flex items-center gap-1.5">
           <UserPlus size={14} /> Назначить
         </button>
@@ -280,6 +336,46 @@ export function CourseChecksheet({ courseId, onBack }: Props) {
           <Save size={14} /> Сохранить
         </button>
       </div>
+
+      {/* Version history */}
+      {showHistory && (
+        <div className="bg-card border border-border rounded-xl p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-display font-bold text-foreground flex items-center gap-2">
+              <History size={16} /> История версий
+            </h3>
+            <button onClick={() => setShowHistory(false)} className="text-xs text-muted-foreground hover:text-foreground">Закрыть</button>
+          </div>
+          {(!versions || versions.length === 0) ? (
+            <p className="text-xs text-muted-foreground font-body text-center py-4">Нет сохранённых версий. Версия создаётся автоматически при каждом сохранении.</p>
+          ) : (
+            <div className="space-y-2 max-h-80 overflow-y-auto">
+              {versions.map(v => {
+                const sectionCount = Array.isArray(v.sections) ? (v.sections as any[]).length : 0;
+                return (
+                  <div key={v.id} className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
+                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-display font-bold text-primary">
+                      v{v.version_number}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-display font-semibold text-foreground">{v.title}</p>
+                      <p className="text-[10px] text-muted-foreground">
+                        {sectionCount} пунктов • {new Date(v.created_at).toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => { if (confirm(`Восстановить версию ${v.version_number}? Текущие изменения будут потеряны.`)) restoreVersionMut.mutate(v.id); }}
+                      className="px-2 py-1 border border-border rounded text-[10px] font-display font-bold text-muted-foreground hover:bg-accent flex items-center gap-1"
+                    >
+                      <RotateCcw size={10} /> Откатить
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Course meta */}
       <div className="bg-card border border-border rounded-xl p-4 space-y-3">
