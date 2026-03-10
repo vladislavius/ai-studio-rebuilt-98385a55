@@ -1,10 +1,11 @@
 import { useState, useMemo, useRef } from 'react';
-import { TrendingUp, TrendingDown, LayoutDashboard, List, Layers, Download, Upload, Edit2, Trash2, Plus, X } from 'lucide-react';
-import { useStatisticDefinitions, useAllStatisticValues, useStatisticValues, useCreateStatValue, useDeleteStatValue } from '@/hooks/useStatistics';
+import { TrendingUp, TrendingDown, LayoutDashboard, List, Layers, Download, Upload, Edit2, Trash2, Plus, X, Settings, Save } from 'lucide-react';
+import { useStatisticDefinitions, useAllStatisticValues, useStatisticValues, useCreateStatValue, useDeleteStatValue, useUpdateStatValue } from '@/hooks/useStatistics';
+import { useUpdateStatDefinition } from '@/hooks/useOrgChartMutations';
 import { useDepartments, DBDepartment } from '@/hooks/useDepartments';
 import { StatCard } from '@/components/statistics/StatCard';
-import { PERIODS, PeriodType, getFilteredValues, analyzeTrend, calculateCondition, getConditionInfo, CONDITIONS, calculateTrendLine } from '@/utils/statistics';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, ReferenceLine } from 'recharts';
+import { PERIODS, PeriodType, getFilteredValues, analyzeTrend, calculateCondition, getConditionInfo, CONDITIONS, calculateTrendLine, StatCondition } from '@/utils/statistics';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 
@@ -37,6 +38,8 @@ export function StatisticsPage({ selectedDeptId }: StatisticsPageProps) {
   const { data: expandedValues } = useStatisticValues(expandedStatId);
   const createStatValue = useCreateStatValue();
   const deleteStatValue = useDeleteStatValue();
+  const updateStatValue = useUpdateStatValue();
+  const updateStatDef = useUpdateStatDefinition();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Edit form state
@@ -44,6 +47,13 @@ export function StatisticsPage({ selectedDeptId }: StatisticsPageProps) {
   const [editDate, setEditDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [editValue, setEditValue] = useState('');
   const [editValue2, setEditValue2] = useState('');
+
+  // Manual condition override
+  const [manualCondition, setManualCondition] = useState<StatCondition | null>(null);
+
+  // Definition editing
+  const [showDefEdit, setShowDefEdit] = useState(false);
+  const [defEditForm, setDefEditForm] = useState({ title: '', description: '', calculation_method: '', purpose: '', is_double: false, inverted: false, is_favorite: false });
 
   const definitions = allDefinitions ?? [];
   const valuesMap = allValuesMap ?? {};
@@ -148,6 +158,10 @@ export function StatisticsPage({ selectedDeptId }: StatisticsPageProps) {
     return calculateCondition(filtered, expandedDef?.inverted ?? false);
   }, [expandedValues, selectedPeriod, expandedDef]);
 
+  // Use manual condition if set, otherwise auto
+  const activeCondition = manualCondition ?? expandedCondition;
+  const conditionInfo = getConditionInfo(activeCondition);
+
   // CSV Export
   const handleExportCSV = () => {
     const relevantDefs = selectedDeptId
@@ -211,10 +225,51 @@ export function StatisticsPage({ selectedDeptId }: StatisticsPageProps) {
       date: editDate,
       value: parseFloat(editValue),
       value2: editValue2 ? parseFloat(editValue2) : undefined,
+      condition: manualCondition ?? undefined,
     });
     setEditValue('');
     setEditValue2('');
     setShowEditForm(false);
+  };
+
+  // Save manual condition to the latest value
+  const handleSaveManualCondition = async (condition: StatCondition) => {
+    setManualCondition(condition);
+    // Save to the latest value if exists
+    if (expandedValues?.length) {
+      const latest = [...expandedValues].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
+      updateStatValue.mutate({ id: latest.id, condition });
+    }
+    toast.success(`Состояние установлено: ${getConditionInfo(condition).label}`);
+  };
+
+  // Open definition edit
+  const openDefEdit = () => {
+    if (!expandedDef) return;
+    setDefEditForm({
+      title: expandedDef.title ?? '',
+      description: expandedDef.description ?? '',
+      calculation_method: expandedDef.calculation_method ?? '',
+      purpose: expandedDef.purpose ?? '',
+      is_double: expandedDef.is_double ?? false,
+      inverted: expandedDef.inverted ?? false,
+      is_favorite: expandedDef.is_favorite ?? false,
+    });
+    setShowDefEdit(true);
+  };
+
+  const handleSaveDefEdit = async () => {
+    if (!expandedStatId || !defEditForm.title.trim()) return;
+    await updateStatDef.mutateAsync({ id: expandedStatId, ...defEditForm });
+    setShowDefEdit(false);
+  };
+
+  // Reset manual condition when switching stats
+  const handleExpandStat = (id: string) => {
+    setExpandedStatId(id);
+    setManualCondition(null);
+    setShowEditForm(false);
+    setShowDefEdit(false);
   };
 
   // =================== RENDER ===================
@@ -257,7 +312,7 @@ export function StatisticsPage({ selectedDeptId }: StatisticsPageProps) {
                   inverted={stat.inverted ?? false}
                   isFavorite={stat.is_favorite ?? false}
                   accentColor={dept.color ?? 'hsl(var(--primary))'}
-                  onClick={() => setExpandedStatId(stat.id)}
+                  onClick={() => handleExpandStat(stat.id)}
                 />
               ))}
             </div>
@@ -273,7 +328,6 @@ export function StatisticsPage({ selectedDeptId }: StatisticsPageProps) {
 
     return (
       <div className="space-y-6 md:space-y-8 animate-in fade-in pb-20">
-        {/* Department main stats */}
         <div className="space-y-3">
           <div className="flex items-center gap-2 px-1">
             <div className="p-1.5 bg-muted rounded-lg text-muted-foreground">
@@ -294,13 +348,12 @@ export function StatisticsPage({ selectedDeptId }: StatisticsPageProps) {
                 inverted={stat.inverted ?? false}
                 isFavorite={stat.is_favorite ?? false}
                 accentColor={selectedDept.color ?? 'hsl(var(--primary))'}
-                onClick={() => setExpandedStatId(stat.id)}
+                onClick={() => handleExpandStat(stat.id)}
               />
             ))}
           </div>
         </div>
 
-        {/* Subdepartments */}
         {subDepts.map(sub => {
           const subStats = definitions.filter(d => d.owner_id === sub.id).filter(shouldRenderStat);
           if (subStats.length === 0) return null;
@@ -326,7 +379,7 @@ export function StatisticsPage({ selectedDeptId }: StatisticsPageProps) {
                     inverted={stat.inverted ?? false}
                     isFavorite={stat.is_favorite ?? false}
                     accentColor={selectedDept.color ?? 'hsl(var(--primary))'}
-                    onClick={() => setExpandedStatId(stat.id)}
+                    onClick={() => handleExpandStat(stat.id)}
                   />
                 ))}
               </div>
@@ -336,8 +389,6 @@ export function StatisticsPage({ selectedDeptId }: StatisticsPageProps) {
       </div>
     );
   };
-
-  const conditionInfo = getConditionInfo(expandedCondition);
 
   return (
     <div className="flex flex-col animate-in fade-in space-y-4">
@@ -372,9 +423,6 @@ export function StatisticsPage({ selectedDeptId }: StatisticsPageProps) {
             <input ref={fileInputRef} type="file" accept=".csv" className="hidden" onChange={handleImportCSV} />
             <button onClick={() => fileInputRef.current?.click()} className="p-2 rounded-lg border border-border text-muted-foreground hover:text-foreground hover:bg-accent transition-colors" title="Импорт CSV">
               <Upload size={16} />
-            </button>
-            <button onClick={() => setExpandedStatId(definitions[0]?.id ?? null)} className="p-2 rounded-lg border border-border text-muted-foreground hover:text-foreground hover:bg-accent transition-colors" title="Редактировать">
-              <Edit2 size={16} />
             </button>
           </div>
         </div>
@@ -446,40 +494,117 @@ export function StatisticsPage({ selectedDeptId }: StatisticsPageProps) {
       ) : displayMode === 'dashboard' ? (
         selectedDeptId ? renderDepartmentView() : renderDashboardOS()
       ) : (
-        <RenderListView definitions={definitions} valuesMap={valuesMap} selectedPeriod={selectedPeriod} onExpand={setExpandedStatId} />
+        <RenderListView definitions={definitions} valuesMap={valuesMap} selectedPeriod={selectedPeriod} onExpand={handleExpandStat} />
       )}
 
       {/* ========== Expanded Stat Modal ========== */}
       {expandedStatId && expandedDef && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/60 backdrop-blur-sm p-4" onClick={() => { setExpandedStatId(null); setShowEditForm(false); }}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/60 backdrop-blur-sm p-4" onClick={() => { setExpandedStatId(null); setShowEditForm(false); setShowDefEdit(false); setManualCondition(null); }}>
           <div className="bg-card border border-border rounded-2xl shadow-xl w-full max-w-3xl max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             {/* Modal header */}
             <div className="p-5 border-b border-border">
               <div className="flex items-center justify-between">
-                <div>
+                <div className="flex-1 min-w-0">
                   <h3 className="font-display font-bold text-foreground text-base uppercase">{expandedDef.title}</h3>
                   <p className="text-xs text-muted-foreground font-display mt-0.5">
                     {expandedOwnerDept?.full_name || expandedOwnerDept?.name || ''}
                   </p>
-                  <div className="flex items-center gap-2 mt-2">
+                  <div className="flex items-center gap-2 mt-2 flex-wrap">
                     {expandedDef.inverted && (
                       <span className="text-[9px] bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 px-2 py-0.5 rounded font-bold">ОБРАТНАЯ</span>
                     )}
                     {expandedDef.is_double && (
                       <span className="text-[9px] bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 px-2 py-0.5 rounded font-bold">ДВОЙНАЯ</span>
                     )}
+                    {expandedDef.is_favorite && (
+                      <span className="text-[9px] bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 px-2 py-0.5 rounded font-bold">ГСД</span>
+                    )}
                     <span className={`text-[9px] px-2 py-0.5 rounded font-bold ${conditionInfo.bgColor} ${conditionInfo.color}`}>
                       {conditionInfo.label.toUpperCase()}
                     </span>
+                    {manualCondition && (
+                      <span className="text-[8px] text-muted-foreground font-display">(вручную)</span>
+                    )}
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <button onClick={() => { setExpandedStatId(null); setShowEditForm(false); }} className="p-2 text-muted-foreground hover:text-foreground rounded-lg hover:bg-accent">
+                <div className="flex items-center gap-1">
+                  <button onClick={openDefEdit} className="p-2 text-muted-foreground hover:text-foreground rounded-lg hover:bg-accent" title="Редактировать определение">
+                    <Settings size={16} />
+                  </button>
+                  <button onClick={() => { setExpandedStatId(null); setShowEditForm(false); setShowDefEdit(false); setManualCondition(null); }} className="p-2 text-muted-foreground hover:text-foreground rounded-lg hover:bg-accent">
                     <X size={18} />
                   </button>
                 </div>
               </div>
             </div>
+
+            {/* Definition edit form */}
+            {showDefEdit && (
+              <div className="p-5 border-b border-border bg-accent/30">
+                <p className="text-xs font-display font-bold text-foreground uppercase mb-3">Редактирование определения</p>
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-[10px] font-display font-bold text-muted-foreground uppercase block mb-1">Название *</label>
+                    <input
+                      value={defEditForm.title}
+                      onChange={e => setDefEditForm(p => ({ ...p, title: e.target.value }))}
+                      className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-display font-bold text-muted-foreground uppercase block mb-1">Описание</label>
+                    <textarea
+                      value={defEditForm.description}
+                      onChange={e => setDefEditForm(p => ({ ...p, description: e.target.value }))}
+                      rows={2}
+                      className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm resize-none"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-[10px] font-display font-bold text-muted-foreground uppercase block mb-1">Метод расчёта</label>
+                      <textarea
+                        value={defEditForm.calculation_method}
+                        onChange={e => setDefEditForm(p => ({ ...p, calculation_method: e.target.value }))}
+                        rows={2}
+                        className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm resize-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-display font-bold text-muted-foreground uppercase block mb-1">Назначение (тег)</label>
+                      <input
+                        value={defEditForm.purpose}
+                        onChange={e => setDefEditForm(p => ({ ...p, purpose: e.target.value }))}
+                        className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-6">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input type="checkbox" checked={defEditForm.is_favorite} onChange={e => setDefEditForm(p => ({ ...p, is_favorite: e.target.checked }))} className="rounded" />
+                      <span className="text-xs font-display font-bold">ГСД</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input type="checkbox" checked={defEditForm.is_double} onChange={e => setDefEditForm(p => ({ ...p, is_double: e.target.checked }))} className="rounded" />
+                      <span className="text-xs font-display font-bold">Двойная</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input type="checkbox" checked={defEditForm.inverted} onChange={e => setDefEditForm(p => ({ ...p, inverted: e.target.checked }))} className="rounded" />
+                      <span className="text-xs font-display font-bold">Обратная</span>
+                    </label>
+                  </div>
+                  <div className="flex gap-2">
+                    <button onClick={handleSaveDefEdit} disabled={!defEditForm.title.trim()} className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-xs font-display font-bold hover:bg-primary/90 transition-colors flex items-center gap-1.5 disabled:opacity-50">
+                      <Save size={14} />
+                      Сохранить
+                    </button>
+                    <button onClick={() => setShowDefEdit(false)} className="px-4 py-2 border border-border rounded-lg text-xs font-display font-bold text-muted-foreground hover:bg-accent transition-colors">
+                      Отмена
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Current value + trend + condition */}
             <div className="p-5 grid grid-cols-3 gap-4">
@@ -506,25 +631,34 @@ export function StatisticsPage({ selectedDeptId }: StatisticsPageProps) {
               </div>
             </div>
 
-            {/* Condition scale */}
+            {/* Condition scale - clickable for manual override */}
             <div className="px-5 pb-4">
+              <div className="flex items-center justify-between mb-1.5">
+                <p className="text-[9px] font-display font-bold text-muted-foreground uppercase tracking-wider">Шкала состояний (нажмите для ручного выбора)</p>
+                {manualCondition && (
+                  <button onClick={() => { setManualCondition(null); toast.info('Автоматический расчёт восстановлен'); }} className="text-[9px] text-primary font-display font-bold hover:underline">
+                    Сбросить
+                  </button>
+                )}
+              </div>
               <div className="flex gap-1">
                 {CONDITIONS.map(c => (
-                  <div
+                  <button
                     key={c.id}
-                    className={`flex-1 py-1.5 rounded text-center text-[7px] font-display font-bold uppercase transition-all ${
-                      expandedCondition === c.id
+                    onClick={() => handleSaveManualCondition(c.id)}
+                    className={`flex-1 py-1.5 rounded text-center text-[7px] font-display font-bold uppercase transition-all cursor-pointer hover:ring-2 hover:ring-offset-1 hover:ring-current ${
+                      activeCondition === c.id
                         ? `${c.bgColor} ${c.color} ring-2 ring-offset-1 ring-current`
-                        : 'bg-muted text-muted-foreground/40'
+                        : 'bg-muted text-muted-foreground/40 hover:text-muted-foreground/70'
                     }`}
                   >
                     {c.label.split(' ')[0]}
-                  </div>
+                  </button>
                 ))}
               </div>
             </div>
 
-            {/* Chart: Факт + План - LINEAR lines */}
+            {/* Chart */}
             <div className="px-5 pb-4">
               <div className="bg-muted rounded-xl p-4">
                 <p className="text-[10px] font-display font-bold text-muted-foreground uppercase tracking-wider mb-3">ГРАФИК ПЛАН/ФАКТ</p>
@@ -549,7 +683,6 @@ export function StatisticsPage({ selectedDeptId }: StatisticsPageProps) {
                       {expandedChartData.some(d => d.plan != null) && (
                         <Line type="linear" dataKey="plan" stroke="#f43f5e" strokeWidth={1.5} strokeDasharray="5 5" dot={{ fill: '#f43f5e', r: 3, strokeWidth: 0 }} name="plan" />
                       )}
-                      {/* Trend line */}
                       <Line type="linear" dataKey="trend" stroke="#6366f1" strokeWidth={1.5} strokeDasharray="6 4" dot={false} activeDot={false} name="trend" />
                     </LineChart>
                   </ResponsiveContainer>
@@ -559,37 +692,35 @@ export function StatisticsPage({ selectedDeptId }: StatisticsPageProps) {
               </div>
             </div>
 
-            {/* Plan vs Fact summary */}
-            {expandedChartData.length > 0 && (
-              <div className="px-5 pb-4">
-                <div className="bg-muted rounded-xl p-4 flex items-center justify-between">
-                  <div>
-                    <p className="text-[10px] font-display font-bold text-muted-foreground uppercase mb-1">ПЛАН И ФАКТ</p>
-                    <div className="flex gap-6">
-                      <div>
-                        <p className="text-[9px] text-muted-foreground font-display">План</p>
-                        <p className="text-lg font-display font-bold text-foreground">
-                          {expandedChartData[expandedChartData.length - 1]?.plan?.toLocaleString('ru-RU') ?? '—'}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-[9px] text-muted-foreground font-display">Факт</p>
-                        <p className="text-lg font-display font-bold text-foreground">
-                          {expandedChartData[expandedChartData.length - 1]?.fact?.toLocaleString('ru-RU') ?? '—'}
-                        </p>
-                      </div>
+            {/* Plan vs Fact summary + add button */}
+            <div className="px-5 pb-4">
+              <div className="bg-muted rounded-xl p-4 flex items-center justify-between">
+                <div>
+                  <p className="text-[10px] font-display font-bold text-muted-foreground uppercase mb-1">ПЛАН И ФАКТ</p>
+                  <div className="flex gap-6">
+                    <div>
+                      <p className="text-[9px] text-muted-foreground font-display">План</p>
+                      <p className="text-lg font-display font-bold text-foreground">
+                        {expandedChartData.length > 0 ? (expandedChartData[expandedChartData.length - 1]?.plan?.toLocaleString('ru-RU') ?? '—') : '—'}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-[9px] text-muted-foreground font-display">Факт</p>
+                      <p className="text-lg font-display font-bold text-foreground">
+                        {expandedChartData.length > 0 ? (expandedChartData[expandedChartData.length - 1]?.fact?.toLocaleString('ru-RU') ?? '—') : '—'}
+                      </p>
                     </div>
                   </div>
-                  <button
-                    onClick={() => setShowEditForm(true)}
-                    className="px-4 py-2 bg-primary text-primary-foreground rounded-xl text-xs font-display font-bold flex items-center gap-1.5 hover:bg-primary/90 transition-colors"
-                  >
-                    <Edit2 size={14} />
-                    Редактировать
-                  </button>
                 </div>
+                <button
+                  onClick={() => setShowEditForm(true)}
+                  className="px-4 py-2 bg-primary text-primary-foreground rounded-xl text-xs font-display font-bold flex items-center gap-1.5 hover:bg-primary/90 transition-colors"
+                >
+                  <Plus size={14} />
+                  Добавить значение
+                </button>
               </div>
-            )}
+            </div>
 
             {/* Edit form */}
             {showEditForm && (
@@ -637,6 +768,7 @@ export function StatisticsPage({ selectedDeptId }: StatisticsPageProps) {
                         <th className="px-3 py-2 text-left font-display font-bold text-muted-foreground">Дата</th>
                         <th className="px-3 py-2 text-right font-display font-bold text-muted-foreground">Факт</th>
                         <th className="px-3 py-2 text-right font-display font-bold text-muted-foreground">План</th>
+                        <th className="px-3 py-2 text-center font-display font-bold text-muted-foreground">Сост.</th>
                         <th className="px-3 py-2 text-right font-display font-bold text-muted-foreground w-10"></th>
                       </tr>
                     </thead>
@@ -646,6 +778,15 @@ export function StatisticsPage({ selectedDeptId }: StatisticsPageProps) {
                           <td className="px-3 py-1.5 font-display text-foreground">{new Date(v.date).toLocaleDateString('ru-RU')}</td>
                           <td className="px-3 py-1.5 text-right font-display font-bold text-foreground">{Number(v.value).toLocaleString('ru-RU')}</td>
                           <td className="px-3 py-1.5 text-right font-display text-muted-foreground">{v.value2 != null ? Number(v.value2).toLocaleString('ru-RU') : '—'}</td>
+                          <td className="px-3 py-1.5 text-center">
+                            {v.condition ? (
+                              <span className={`text-[8px] px-1.5 py-0.5 rounded font-display font-bold ${getConditionInfo(v.condition as StatCondition).bgColor} ${getConditionInfo(v.condition as StatCondition).color}`}>
+                                {getConditionInfo(v.condition as StatCondition).label.split(' ')[0]}
+                              </span>
+                            ) : (
+                              <span className="text-[8px] text-muted-foreground/40">—</span>
+                            )}
+                          </td>
                           <td className="px-3 py-1.5 text-right">
                             <button onClick={() => deleteStatValue.mutate({ id: v.id, definitionId: v.definition_id })} className="p-1 text-muted-foreground hover:text-destructive rounded transition-colors">
                               <Trash2 size={12} />
@@ -659,15 +800,25 @@ export function StatisticsPage({ selectedDeptId }: StatisticsPageProps) {
               </div>
             )}
 
-            {/* Big edit button */}
-            <div className="p-5 border-t border-border">
-              <button
-                onClick={() => setShowEditForm(true)}
-                className="w-full py-3 bg-primary text-primary-foreground rounded-xl text-sm font-display font-bold hover:bg-primary/90 transition-colors uppercase tracking-wider"
-              >
-                РЕДАКТИРОВАТЬ ДАННЫЕ (ВВОД)
-              </button>
-            </div>
+            {/* Description / calculation method */}
+            {(expandedDef.description || expandedDef.calculation_method) && (
+              <div className="px-5 pb-5">
+                <div className="bg-muted rounded-xl p-4 space-y-2">
+                  {expandedDef.description && (
+                    <div>
+                      <p className="text-[9px] font-display font-bold text-muted-foreground uppercase mb-0.5">Описание</p>
+                      <p className="text-xs text-foreground">{expandedDef.description}</p>
+                    </div>
+                  )}
+                  {expandedDef.calculation_method && (
+                    <div>
+                      <p className="text-[9px] font-display font-bold text-muted-foreground uppercase mb-0.5">Метод расчёта</p>
+                      <p className="text-xs text-foreground">{expandedDef.calculation_method}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
