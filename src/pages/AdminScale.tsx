@@ -63,6 +63,21 @@ export function AdminScalePage() {
       const docx = await import('docx');
       const { saveAs } = await import('file-saver');
 
+      const makePara = (text: string, opts?: { bold?: boolean; italic?: boolean; heading?: any; spacing?: any }) => {
+        return new docx.Paragraph({
+          heading: opts?.heading,
+          spacing: opts?.spacing,
+          children: [new docx.TextRun({ text, bold: opts?.bold, italics: opts?.italic })],
+        });
+      };
+
+      const makeCell = (text: string, opts?: { bold?: boolean; width?: number }) => {
+        return new docx.TableCell({
+          width: opts?.width ? { size: opts.width, type: docx.WidthType.PERCENTAGE } : undefined,
+          children: [new docx.Paragraph({ children: [new docx.TextRun({ text, bold: opts?.bold })] })],
+        });
+      };
+
       const levelRows = [
         { n: 1, title: 'Цель', value: currentScale.goal },
         { n: 2, title: 'Замыслы', value: currentScale.purpose },
@@ -78,27 +93,19 @@ export function AdminScalePage() {
         rows: [
           new docx.TableRow({
             tableHeader: true,
-            children: [
-              new docx.TableCell({ children: [new docx.Paragraph({ text: 'Уровень', bold: true })], width: { size: 25, type: docx.WidthType.PERCENTAGE } }),
-              new docx.TableCell({ children: [new docx.Paragraph({ text: 'Содержание', bold: true })], width: { size: 75, type: docx.WidthType.PERCENTAGE } }),
-            ],
+            children: [makeCell('Уровень', { bold: true, width: 25 }), makeCell('Содержание', { bold: true, width: 75 })],
           }),
           ...levelRows.map(l => new docx.TableRow({
-            children: [
-              new docx.TableCell({ children: [new docx.Paragraph({ text: `${l.n}. ${l.title}` })] }),
-              new docx.TableCell({ children: [new docx.Paragraph({ text: l.value })] }),
-            ],
+            children: [makeCell(`${l.n}. ${l.title}`), makeCell(l.value)],
           })),
         ],
       });
 
-      const programSections: docx.Paragraph[] = [];
+      const programChildren: (InstanceType<typeof docx.Paragraph> | InstanceType<typeof docx.Table>)[] = [];
       currentScale.programs.forEach((prog, pi) => {
-        programSections.push(
-          new docx.Paragraph({ text: `Программа ${pi + 1}: ${prog.name}`, heading: docx.HeadingLevel.HEADING_2, spacing: { before: 400 } }),
-        );
+        programChildren.push(makePara(`Программа ${pi + 1}: ${prog.name}`, { bold: true, heading: docx.HeadingLevel.HEADING_2, spacing: { before: 400 } }));
         if (prog.mainTask) {
-          programSections.push(new docx.Paragraph({ text: `Главная задача: ${prog.mainTask}`, italics: true, spacing: { after: 200 } }));
+          programChildren.push(makePara(`Главная задача: ${prog.mainTask}`, { italic: true, spacing: { after: 200 } }));
         }
 
         const stepTable = new docx.Table({
@@ -107,42 +114,41 @@ export function AdminScalePage() {
             new docx.TableRow({
               tableHeader: true,
               children: [
-                new docx.TableCell({ children: [new docx.Paragraph({ text: '№', bold: true })], width: { size: 5, type: docx.WidthType.PERCENTAGE } }),
-                new docx.TableCell({ children: [new docx.Paragraph({ text: 'Тип', bold: true })], width: { size: 15, type: docx.WidthType.PERCENTAGE } }),
-                new docx.TableCell({ children: [new docx.Paragraph({ text: 'Задача', bold: true })], width: { size: 35, type: docx.WidthType.PERCENTAGE } }),
-                new docx.TableCell({ children: [new docx.Paragraph({ text: 'Ответственный', bold: true })], width: { size: 15, type: docx.WidthType.PERCENTAGE } }),
-                new docx.TableCell({ children: [new docx.Paragraph({ text: 'Дедлайн', bold: true })], width: { size: 10, type: docx.WidthType.PERCENTAGE } }),
-                new docx.TableCell({ children: [new docx.Paragraph({ text: 'Статус', bold: true })], width: { size: 10, type: docx.WidthType.PERCENTAGE } }),
-                new docx.TableCell({ children: [new docx.Paragraph({ text: 'Примечания', bold: true })], width: { size: 10, type: docx.WidthType.PERCENTAGE } }),
+                makeCell('№', { bold: true, width: 5 }),
+                makeCell('Тип', { bold: true, width: 15 }),
+                makeCell('Задача', { bold: true, width: 30 }),
+                makeCell('Ответственный', { bold: true, width: 15 }),
+                makeCell('Дедлайн', { bold: true, width: 10 }),
+                makeCell('Статус', { bold: true, width: 10 }),
+                makeCell('Примечания', { bold: true, width: 15 }),
               ],
             }),
             ...prog.steps.map((st, si) => new docx.TableRow({
               children: [
-                new docx.TableCell({ children: [new docx.Paragraph({ text: `${si + 1}` })] }),
-                new docx.TableCell({ children: [new docx.Paragraph({ text: `${STEP_TYPES[st.type].icon} ${STEP_TYPES[st.type].label}` })] }),
-                new docx.TableCell({ children: [new docx.Paragraph({ text: st.name })] }),
-                new docx.TableCell({ children: [new docx.Paragraph({ text: st.responsible || '' })] }),
-                new docx.TableCell({ children: [new docx.Paragraph({ text: st.deadline || '' })] }),
-                new docx.TableCell({ children: [new docx.Paragraph({ text: st.done ? '✅' : '○' })] }),
-                new docx.TableCell({ children: [new docx.Paragraph({ text: st.notes || '' })] }),
+                makeCell(`${si + 1}`),
+                makeCell(`${STEP_TYPES[st.type].label}`),
+                makeCell(st.name),
+                makeCell(st.responsible || ''),
+                makeCell(st.deadline || ''),
+                makeCell(st.done ? '✅' : '○'),
+                makeCell(st.notes || ''),
               ],
             })),
           ],
         });
-
-        programSections.push(stepTable as any);
+        programChildren.push(stepTable);
       });
 
       const doc = new docx.Document({
         sections: [{
           properties: {},
           children: [
-            new docx.Paragraph({ text: currentScale.name, heading: docx.HeadingLevel.TITLE }),
-            new docx.Paragraph({ text: `Дата создания: ${new Date(currentScale.created).toLocaleDateString('ru-RU')}`, spacing: { after: 300 } }),
-            new docx.Paragraph({ text: 'Административная шкала', heading: docx.HeadingLevel.HEADING_1, spacing: { before: 200 } }),
-            levelTable as any,
-            new docx.Paragraph({ text: 'Программы и задачи', heading: docx.HeadingLevel.HEADING_1, spacing: { before: 400 } }),
-            ...programSections,
+            makePara(currentScale.name, { bold: true, heading: docx.HeadingLevel.TITLE }),
+            makePara(`Дата создания: ${new Date(currentScale.created).toLocaleDateString('ru-RU')}`, { spacing: { after: 300 } }),
+            makePara('Административная шкала', { bold: true, heading: docx.HeadingLevel.HEADING_1, spacing: { before: 200 } }),
+            levelTable,
+            makePara('Программы и задачи', { bold: true, heading: docx.HeadingLevel.HEADING_1, spacing: { before: 400 } }),
+            ...programChildren,
           ],
         }],
       });
