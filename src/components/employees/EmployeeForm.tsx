@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { useCreateEmployee, useUpdateEmployee, useEmployees } from '@/hooks/useEmployees';
 import { useDepartments } from '@/hooks/useDepartments';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import {
@@ -289,7 +291,7 @@ export function EmployeeForm({ employeeId, onClose }: EmployeeFormProps) {
             {activeSection === 'files' && <SectionFiles employeeId={employeeId} />}
             {activeSection === 'statistics' && <SectionPlaceholder icon={TrendingUp} title="Личная Статистика и KPI" />}
             {activeSection === 'telegram' && <SectionPlaceholder icon={MessageSquare} title="Telegram-боты" />}
-            {activeSection === 'development' && <SectionPlaceholder icon={Target} title="Карта развития" />}
+            {activeSection === 'development' && <SectionDevelopment employeeId={employeeId} />}
             {activeSection === 'ethics' && <SectionPlaceholder icon={Shield} title="Этическая папка" />}
             {activeSection === 'dp' && <SectionPlaceholder icon={FolderArchive} title="Собрать ДП" />}
           </div>
@@ -658,6 +660,61 @@ function SectionFiles({ employeeId }: { employeeId?: string | null }) {
       <FieldCard>
         <p className="text-center text-sm text-muted-foreground py-6">Нет загруженных файлов</p>
       </FieldCard>
+    </div>
+  );
+}
+
+/* ─── Section: Development (Карта развития) ─── */
+function SectionDevelopment({ employeeId }: { employeeId?: string | null }) {
+  const { data: progress, isLoading } = useQuery({
+    queryKey: ['employee-courses', employeeId],
+    queryFn: async () => {
+      if (!employeeId) return [];
+      const { data, error } = await supabase.from('course_progress').select('*, courses(title)').eq('employee_id', employeeId);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!employeeId,
+  });
+
+  return (
+    <div className="space-y-6">
+      <SectionTitle icon={Target}>Карта развития</SectionTitle>
+      {!employeeId ? (
+        <div className="border border-dashed border-border rounded-xl p-8 text-center">
+          <p className="text-sm text-muted-foreground font-body">Сохраните сотрудника, чтобы назначить курсы</p>
+        </div>
+      ) : isLoading ? (
+        <p className="text-sm text-muted-foreground">Загрузка...</p>
+      ) : !progress || progress.length === 0 ? (
+        <div className="border border-dashed border-border rounded-xl p-8 text-center">
+          <Target size={32} className="mx-auto text-muted-foreground/40 mb-3" />
+          <p className="text-sm text-muted-foreground font-body">Нет назначенных курсов</p>
+          <p className="text-xs text-muted-foreground mt-1">Назначьте курсы в разделе Академия</p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {progress.map((p: any) => {
+            const percent = p.progress_percent || 0;
+            return (
+              <FieldCard key={p.id}>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-display font-semibold text-foreground">{p.courses?.title || '—'}</p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">
+                      {p.certified ? '✅ Сертифицирован' : p.completed_at ? '✓ Завершён' : percent > 0 ? 'В процессе' : 'Не начат'}
+                    </p>
+                  </div>
+                  <span className="text-xs font-display font-bold text-muted-foreground">{percent}%</span>
+                </div>
+                <div className="w-full bg-muted rounded-full h-1.5">
+                  <div className="bg-primary h-1.5 rounded-full transition-all" style={{ width: `${percent}%` }} />
+                </div>
+              </FieldCard>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
