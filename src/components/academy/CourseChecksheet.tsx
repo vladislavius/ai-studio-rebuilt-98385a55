@@ -16,6 +16,7 @@ interface ChecksheetItem {
   type: 'read' | 'write' | 'demo' | 'drill' | 'starrate' | 'clay_demo' | 'checkout' | 'word_clearing' | 'quiz';
   title: string;
   content: string;
+  task?: string;
   critical?: boolean;
   needsCheckout?: boolean;
   starred?: boolean;
