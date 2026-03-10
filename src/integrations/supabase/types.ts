@@ -287,6 +287,56 @@ export type Database = {
           },
         ]
       }
+      course_versions: {
+        Row: {
+          change_note: string | null
+          course_id: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          duration_hours: number | null
+          id: string
+          is_hst_course: boolean | null
+          sections: Json | null
+          title: string
+          version_number: number
+        }
+        Insert: {
+          change_note?: string | null
+          course_id: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          duration_hours?: number | null
+          id?: string
+          is_hst_course?: boolean | null
+          sections?: Json | null
+          title: string
+          version_number?: number
+        }
+        Update: {
+          change_note?: string | null
+          course_id?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          duration_hours?: number | null
+          id?: string
+          is_hst_course?: boolean | null
+          sections?: Json | null
+          title?: string
+          version_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_versions_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       courses: {
         Row: {
           created_at: string
