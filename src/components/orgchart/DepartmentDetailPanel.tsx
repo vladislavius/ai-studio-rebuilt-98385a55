@@ -344,7 +344,10 @@ export function DepartmentDetailPanel({ dept, allDepts, employees, onClose, isAd
             </p>
             <div className="space-y-3">
               {children.map(child => {
-                const childEmps = employees.filter(e => (e.department_ids ?? []).includes(child.id));
+                const childEmps = employees.filter(e =>
+                  (e.department_ids ?? []).includes(child.id) ||
+                  ((e as any).subdepartment_ids ?? []).some((id: string) => id === child.id)
+                );
                 return (
                   <div key={child.id} className="bg-muted/30 border border-border rounded-xl overflow-hidden group/child">
                     <div className="h-1" style={{ backgroundColor: child.color ?? dept.color ?? 'hsl(var(--primary))' }} />
