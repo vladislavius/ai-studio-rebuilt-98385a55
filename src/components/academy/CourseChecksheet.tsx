@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, Plus, Trash2, ChevronUp, ChevronDown, Save, UserPlus, BookOpen, PenLine, Eye as EyeIcon, Dumbbell, Star } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, ChevronUp, ChevronDown, Save, UserPlus, BookOpen, PenLine, Eye as EyeIcon, Dumbbell, Star, Sparkles, Search, MessageSquare, ClipboardCheck } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Input } from '@/components/ui/input';
@@ -7,11 +7,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
+import { GenerateChecksheetModal } from './GenerateChecksheetModal';
 
 interface ChecksheetItem {
   id: string;
   order: number;
-  type: 'read' | 'write' | 'demo' | 'drill' | 'starrate';
+  type: 'read' | 'write' | 'demo' | 'drill' | 'starrate' | 'clay_demo' | 'checkout' | 'word_clearing';
   title: string;
   content: string;
 }
@@ -20,7 +21,10 @@ const TYPE_LABELS: Record<string, { label: string; icon: typeof BookOpen }> = {
   read: { label: 'Прочитать', icon: BookOpen },
   write: { label: 'Написать', icon: PenLine },
   demo: { label: 'Демо', icon: EyeIcon },
+  clay_demo: { label: 'Глиняное демо', icon: Sparkles },
   drill: { label: 'Упражнение', icon: Dumbbell },
+  checkout: { label: 'Чек-аут', icon: ClipboardCheck },
+  word_clearing: { label: 'Прояснение слов', icon: Search },
   starrate: { label: 'Звёздная оценка', icon: Star },
 };
 
@@ -36,6 +40,7 @@ export function CourseChecksheet({ courseId, onBack }: Props) {
   const [description, setDescription] = useState('');
   const [isHst, setIsHst] = useState(false);
   const [showAssign, setShowAssign] = useState(false);
+  const [showGenerate, setShowGenerate] = useState(false);
   const [selectedEmployees, setSelectedEmployees] = useState<string[]>([]);
 
   const { data: course, isLoading } = useQuery({
@@ -104,13 +109,7 @@ export function CourseChecksheet({ courseId, onBack }: Props) {
   });
 
   const addItem = () => {
-    setItems(prev => [...prev, {
-      id: crypto.randomUUID(),
-      order: prev.length + 1,
-      type: 'read',
-      title: '',
-      content: '',
-    }]);
+    setItems(prev => [...prev, { id: crypto.randomUUID(), order: prev.length + 1, type: 'read', title: '', content: '' }]);
   };
 
   const removeItem = (id: string) => setItems(prev => prev.filter(it => it.id !== id));
@@ -125,6 +124,13 @@ export function CourseChecksheet({ courseId, onBack }: Props) {
 
   const updateItem = (id: string, field: keyof ChecksheetItem, value: string) => {
     setItems(prev => prev.map(it => it.id === id ? { ...it, [field]: value } : it));
+  };
+
+  const handleGenerated = (generated: ChecksheetItem[]) => {
+    if (items.length > 0 && items.some(it => it.title.trim())) {
+      if (!confirm('Существующие пункты будут заменены. Продолжить?')) return;
+    }
+    setItems(generated);
   };
 
   const assignedIds = new Set(existingProgress?.map(p => p.employee_id) || []);
@@ -170,59 +176,48 @@ export function CourseChecksheet({ courseId, onBack }: Props) {
 
       {/* Checksheet items */}
       <div className="space-y-2">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-2 flex-wrap">
           <h2 className="text-sm font-display font-bold text-foreground">Пункты контрольного листа</h2>
-          <button onClick={addItem} className="px-3 py-1.5 bg-primary/10 text-primary rounded-lg text-xs font-display font-bold flex items-center gap-1.5 hover:bg-primary/20">
-            <Plus size={14} /> Добавить пункт
-          </button>
+          <div className="flex gap-2">
+            <button onClick={() => setShowGenerate(true)} className="px-3 py-1.5 bg-accent text-accent-foreground rounded-lg text-xs font-display font-bold flex items-center gap-1.5 hover:bg-accent/80">
+              <Sparkles size={14} /> Сгенерировать с ИИ
+            </button>
+            <button onClick={addItem} className="px-3 py-1.5 bg-primary/10 text-primary rounded-lg text-xs font-display font-bold flex items-center gap-1.5 hover:bg-primary/20">
+              <Plus size={14} /> Добавить пункт
+            </button>
+          </div>
         </div>
 
         {items.length === 0 && (
           <div className="bg-card border border-border border-dashed rounded-xl p-8 text-center">
-            <p className="text-sm text-muted-foreground font-body">Добавьте пункты контрольного листа</p>
+            <p className="text-sm text-muted-foreground font-body">Добавьте пункты контрольного листа или сгенерируйте с помощью ИИ</p>
           </div>
         )}
 
-        {items.map((item, idx) => {
-          const TypeIcon = TYPE_LABELS[item.type]?.icon || BookOpen;
-          return (
-            <div key={item.id} className="bg-card border border-border rounded-xl p-4 space-y-2">
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-display font-bold text-muted-foreground w-6 text-center">{idx + 1}</span>
-                <div className="w-32">
-                  <Select value={item.type} onValueChange={v => updateItem(item.id, 'type', v)}>
-                    <SelectTrigger className="h-8 text-xs bg-background">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Object.entries(TYPE_LABELS).map(([key, { label }]) => (
-                        <SelectItem key={key} value={key}>{label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <Input
-                  value={item.title}
-                  onChange={e => updateItem(item.id, 'title', e.target.value)}
-                  placeholder="Заголовок задания"
-                  className="flex-1 h-8 text-xs bg-background"
-                />
-                <div className="flex gap-0.5">
-                  <button onClick={() => moveItem(idx, -1)} disabled={idx === 0} className="p-1 rounded hover:bg-accent text-muted-foreground disabled:opacity-30"><ChevronUp size={14} /></button>
-                  <button onClick={() => moveItem(idx, 1)} disabled={idx === items.length - 1} className="p-1 rounded hover:bg-accent text-muted-foreground disabled:opacity-30"><ChevronDown size={14} /></button>
-                  <button onClick={() => removeItem(item.id)} className="p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive"><Trash2 size={14} /></button>
-                </div>
+        {items.map((item, idx) => (
+          <div key={item.id} className="bg-card border border-border rounded-xl p-4 space-y-2">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-display font-bold text-muted-foreground w-6 text-center">{idx + 1}</span>
+              <div className="w-36">
+                <Select value={item.type} onValueChange={v => updateItem(item.id, 'type', v)}>
+                  <SelectTrigger className="h-8 text-xs bg-background"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(TYPE_LABELS).map(([key, { label }]) => (
+                      <SelectItem key={key} value={key}>{label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-              <Textarea
-                value={item.content}
-                onChange={e => updateItem(item.id, 'content', e.target.value)}
-                placeholder="Текст задания, ссылка на материал или содержание статьи..."
-                rows={2}
-                className="text-xs bg-background resize-none"
-              />
+              <Input value={item.title} onChange={e => updateItem(item.id, 'title', e.target.value)} placeholder="Заголовок задания" className="flex-1 h-8 text-xs bg-background" />
+              <div className="flex gap-0.5">
+                <button onClick={() => moveItem(idx, -1)} disabled={idx === 0} className="p-1 rounded hover:bg-accent text-muted-foreground disabled:opacity-30"><ChevronUp size={14} /></button>
+                <button onClick={() => moveItem(idx, 1)} disabled={idx === items.length - 1} className="p-1 rounded hover:bg-accent text-muted-foreground disabled:opacity-30"><ChevronDown size={14} /></button>
+                <button onClick={() => removeItem(item.id)} className="p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive"><Trash2 size={14} /></button>
+              </div>
             </div>
-          );
-        })}
+            <Textarea value={item.content} onChange={e => updateItem(item.id, 'content', e.target.value)} placeholder="Текст задания, ссылка на материал или содержание статьи..." rows={2} className="text-xs bg-background resize-none" />
+          </div>
+        ))}
       </div>
 
       {/* Assign modal */}
@@ -236,15 +231,10 @@ export function CourseChecksheet({ courseId, onBack }: Props) {
               <div className="max-h-60 overflow-y-auto space-y-1">
                 {unassignedEmployees.map(emp => (
                   <label key={emp.id} className="flex items-center gap-2 p-2 rounded-lg hover:bg-accent cursor-pointer text-sm">
-                    <input
-                      type="checkbox"
-                      checked={selectedEmployees.includes(emp.id)}
-                      onChange={e => {
-                        if (e.target.checked) setSelectedEmployees(p => [...p, emp.id]);
-                        else setSelectedEmployees(p => p.filter(id => id !== emp.id));
-                      }}
-                      className="rounded"
-                    />
+                    <input type="checkbox" checked={selectedEmployees.includes(emp.id)} onChange={e => {
+                      if (e.target.checked) setSelectedEmployees(p => [...p, emp.id]);
+                      else setSelectedEmployees(p => p.filter(id => id !== emp.id));
+                    }} className="rounded" />
                     <span className="font-body text-foreground">{emp.full_name}</span>
                     <span className="text-xs text-muted-foreground ml-auto">{emp.position}</span>
                   </label>
@@ -253,16 +243,17 @@ export function CourseChecksheet({ courseId, onBack }: Props) {
             )}
             <div className="flex gap-2 justify-end">
               <button onClick={() => setShowAssign(false)} className="px-4 py-2 border border-border rounded-lg text-xs font-display font-bold text-muted-foreground">Отмена</button>
-              <button
-                onClick={() => assignMut.mutate(selectedEmployees)}
-                disabled={selectedEmployees.length === 0}
-                className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-xs font-display font-bold disabled:opacity-50"
-              >
+              <button onClick={() => assignMut.mutate(selectedEmployees)} disabled={selectedEmployees.length === 0} className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-xs font-display font-bold disabled:opacity-50">
                 Назначить ({selectedEmployees.length})
               </button>
             </div>
           </div>
         </div>
+      )}
+
+      {/* Generate modal */}
+      {showGenerate && (
+        <GenerateChecksheetModal courseTitle={title} onGenerated={handleGenerated} onClose={() => setShowGenerate(false)} />
       )}
     </div>
   );

@@ -1,1 +1,4 @@
 project_id = "lubekziwlzjvyzatphgi"
+
+[functions.generate-checksheet]
+verify_jwt = false
