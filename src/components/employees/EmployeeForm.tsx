@@ -289,7 +289,7 @@ export function EmployeeForm({ employeeId, onClose }: EmployeeFormProps) {
             {activeSection === 'files' && <SectionFiles employeeId={employeeId} />}
             {activeSection === 'statistics' && <SectionPlaceholder icon={TrendingUp} title="Личная Статистика и KPI" />}
             {activeSection === 'telegram' && <SectionPlaceholder icon={MessageSquare} title="Telegram-боты" />}
-            {activeSection === 'development' && <SectionPlaceholder icon={Target} title="Карта развития" />}
+            {activeSection === 'development' && <SectionDevelopment employeeId={employeeId} />}
             {activeSection === 'ethics' && <SectionPlaceholder icon={Shield} title="Этическая папка" />}
             {activeSection === 'dp' && <SectionPlaceholder icon={FolderArchive} title="Собрать ДП" />}
           </div>
