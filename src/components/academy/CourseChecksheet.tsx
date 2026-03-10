@@ -239,6 +239,9 @@ export function CourseChecksheet({ courseId, onBack }: Props) {
                 <span className="text-amber-500 font-bold">⭐ Звёздочный</span>
               </label>
             </div>
+          </div>
+        ))}
+      </div>
 
       {/* Assign modal */}
       {showAssign && (
