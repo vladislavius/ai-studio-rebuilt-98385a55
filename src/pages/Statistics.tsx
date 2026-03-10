@@ -138,6 +138,68 @@ export function StatisticsPage({ selectedDeptId }: StatisticsPageProps) {
   }, [expandedStatId, expandedValues, selectedPeriod]);
 
   const expandedDef = expandedStatId ? definitions.find(d => d.id === expandedStatId) : null;
+  const createStatValue = useCreateStatValue();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // ---- CSV Export ----
+  const handleExportCSV = () => {
+    const relevantDefs = selectedDeptId
+      ? definitions.filter(d => allSelectedIds.includes(d.owner_id ?? ''))
+      : definitions;
+    if (!relevantDefs.length) { toast.error('Нет данных для экспорта'); return; }
+
+    const rows: string[] = ['Название;Тип;Владелец;Дата;Значение'];
+    relevantDefs.forEach(def => {
+      const vals = getStatValues(def.id);
+      const filtered = getFilteredValues(
+        [...vals].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()),
+        selectedPeriod
+      );
+      const ownerDept = departments?.find(d => d.id === def.owner_id);
+      filtered.forEach(v => {
+        rows.push(`"${def.title}";"${def.owner_type}";"${ownerDept?.name ?? def.owner_id ?? ''}";"${v.date}";${v.value}`);
+      });
+    });
+
+    const blob = new Blob(['\uFEFF' + rows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `statistics_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success('CSV экспортирован');
+  };
+
+  // ---- CSV Import ----
+  const handleImportCSV = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const text = ev.target?.result as string;
+      const lines = text.split('\n').filter(l => l.trim());
+      if (lines.length < 2) { toast.error('Файл пуст или неверный формат'); return; }
+
+      let imported = 0;
+      // Skip header, parse rows
+      for (let i = 1; i < lines.length; i++) {
+        const cols = lines[i].split(';').map(c => c.replace(/^"|"$/g, '').trim());
+        if (cols.length < 5) continue;
+        const [title, , , date, valueStr] = cols;
+        const value = parseFloat(valueStr);
+        if (isNaN(value) || !date) continue;
+        // Find matching definition by title
+        const def = definitions.find(d => d.title === title);
+        if (!def) continue;
+        createStatValue.mutate({ definition_id: def.id, date, value });
+        imported++;
+      }
+      toast.success(`Импортировано ${imported} значений`);
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  };
 
   // =================== RENDER ===================
 
