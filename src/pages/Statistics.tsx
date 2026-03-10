@@ -3,7 +3,7 @@ import { TrendingUp, TrendingDown, LayoutDashboard, List, Layers, Download, Uplo
 import { useStatisticDefinitions, useAllStatisticValues, useStatisticValues, useCreateStatValue, useDeleteStatValue } from '@/hooks/useStatistics';
 import { useDepartments, DBDepartment } from '@/hooks/useDepartments';
 import { StatCard } from '@/components/statistics/StatCard';
-import { PERIODS, PeriodType, getFilteredValues, analyzeTrend, calculateCondition, getConditionInfo, CONDITIONS } from '@/utils/statistics';
+import { PERIODS, PeriodType, getFilteredValues, analyzeTrend, calculateCondition, getConditionInfo, CONDITIONS, calculateTrendLine } from '@/utils/statistics';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, ReferenceLine } from 'recharts';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -118,12 +118,15 @@ export function StatisticsPage({ selectedDeptId }: StatisticsPageProps) {
   const expandedChartData = useMemo(() => {
     if (!expandedStatId || !expandedValues?.length) return [];
     const sorted = [...expandedValues].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-    const filtered = getFilteredValues(sorted.map(v => ({ date: v.date, value: Number(v.value), value2: v.value2 != null ? Number(v.value2) : null })), selectedPeriod);
-    return filtered.map(v => ({
+    const mapped = sorted.map(v => ({ date: v.date, value: Number(v.value), value2: v.value2 != null ? Number(v.value2) : null }));
+    const filtered = getFilteredValues(mapped, selectedPeriod);
+    const trendData = calculateTrendLine(filtered);
+    return filtered.map((v, i) => ({
       date: new Date(v.date).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' }),
       rawDate: v.date,
       fact: v.value,
       plan: (v as any).value2 ?? null,
+      trend: trendData[i]?.trend ?? v.value,
     }));
   }, [expandedStatId, expandedValues, selectedPeriod]);
 
@@ -533,13 +536,21 @@ export function StatisticsPage({ selectedDeptId }: StatisticsPageProps) {
                       <YAxis tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} />
                       <Tooltip
                         contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', fontSize: '12px' }}
-                        formatter={(val: number, name: string) => [val.toLocaleString('ru-RU'), name === 'fact' ? 'Факт' : 'План']}
+                        formatter={(val: number, name: string) => {
+                          const labels: Record<string, string> = { fact: 'Факт', plan: 'План', trend: 'Тренд' };
+                          return [val.toLocaleString('ru-RU'), labels[name] || name];
+                        }}
                       />
-                      <Legend formatter={(val) => val === 'fact' ? 'Факт' : 'План'} />
+                      <Legend formatter={(val) => {
+                        const labels: Record<string, string> = { fact: 'Факт', plan: 'План', trend: 'Тренд' };
+                        return labels[val] || val;
+                      }} />
                       <Line type="linear" dataKey="fact" stroke="#10b981" strokeWidth={2} dot={{ fill: '#10b981', r: 3, strokeWidth: 0 }} activeDot={{ r: 5 }} name="fact" />
                       {expandedChartData.some(d => d.plan != null) && (
                         <Line type="linear" dataKey="plan" stroke="#f43f5e" strokeWidth={1.5} strokeDasharray="5 5" dot={{ fill: '#f43f5e', r: 3, strokeWidth: 0 }} name="plan" />
                       )}
+                      {/* Trend line */}
+                      <Line type="linear" dataKey="trend" stroke="#6366f1" strokeWidth={1.5} strokeDasharray="6 4" dot={false} activeDot={false} name="trend" />
                     </LineChart>
                   </ResponsiveContainer>
                 ) : (

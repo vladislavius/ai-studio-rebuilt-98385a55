@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { TrendingUp, TrendingDown } from 'lucide-react';
 import { LineChart, Line, ResponsiveContainer, YAxis, XAxis, CartesianGrid, Tooltip } from 'recharts';
-import { analyzeTrend, getFilteredValues, PeriodType, calculateCondition, getConditionInfo } from '@/utils/statistics';
+import { analyzeTrend, getFilteredValues, PeriodType, calculateCondition, getConditionInfo, calculateTrendLine } from '@/utils/statistics';
 
 interface StatCardProps {
   title: string;
@@ -40,10 +40,14 @@ export function StatCard({
   );
   const conditionInfo = getConditionInfo(condition);
 
-  const chartData = useMemo(() => filtered.map(v => ({
-    v: v.value,
-    date: new Date(v.date).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' }),
-  })), [filtered]);
+  const chartData = useMemo(() => {
+    const trendData = calculateTrendLine(filtered);
+    return filtered.map((v, i) => ({
+      v: v.value,
+      trend: trendData[i]?.trend ?? v.value,
+      date: new Date(v.date).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' }),
+    }));
+  }, [filtered]);
 
   const lineColor = isGood ? '#10b981' : '#f43f5e';
 
@@ -87,7 +91,6 @@ export function StatCard({
               {Math.abs(percent).toFixed(0)}%
             </div>
           )}
-          {/* Condition x indicator */}
           <span className={`text-[8px] md:text-[9px] font-bold ml-auto ${isGood ? '' : 'text-rose-500'}`}>
             {isGood ? '✓' : '✕'}
           </span>
@@ -100,7 +103,7 @@ export function StatCard({
           </span>
         </div>
 
-        {/* Mini Chart - LINEAR lines, no curves */}
+        {/* Mini Chart - LINEAR lines with trend */}
         <div className="flex-1 w-full min-h-0">
           {chartData.length > 1 ? (
             <ResponsiveContainer width="100%" height="100%">
@@ -122,7 +125,10 @@ export function StatCard({
                     fontSize: '10px',
                     padding: '4px 8px'
                   }}
-                  formatter={(val: number) => [val.toLocaleString('ru-RU'), 'Значение']}
+                  formatter={(val: number, name: string) => [
+                    val.toLocaleString('ru-RU'), 
+                    name === 'trend' ? 'Тренд' : 'Значение'
+                  ]}
                 />
                 <Line
                   type="linear"
@@ -131,6 +137,18 @@ export function StatCard({
                   strokeWidth={1.5}
                   dot={{ fill: lineColor, r: 2, strokeWidth: 0 }}
                   activeDot={{ r: 3, strokeWidth: 0 }}
+                  isAnimationActive={false}
+                />
+                {/* Trend line */}
+                <Line
+                  type="linear"
+                  dataKey="trend"
+                  stroke={lineColor}
+                  strokeWidth={1}
+                  strokeDasharray="4 3"
+                  strokeOpacity={0.5}
+                  dot={false}
+                  activeDot={false}
                   isAnimationActive={false}
                 />
               </LineChart>

@@ -1,4 +1,4 @@
-import { format, subWeeks, subMonths, subYears, subDays } from 'date-fns';
+import { format, subWeeks, subMonths, subYears } from 'date-fns';
 
 export type PeriodType = '1w' | '3w' | '1m' | '3m' | '6m' | '1y' | 'all';
 
@@ -15,6 +15,7 @@ export const PERIODS: { id: PeriodType; label: string }[] = [
 export function getFilteredValues<T extends { date: string }>(values: T[], period: PeriodType): T[] {
   if (period === 'all' || !values.length) return values;
   const now = new Date();
+  now.setHours(23, 59, 59, 999);
   let cutoff: Date;
   switch (period) {
     case '1w': cutoff = subWeeks(now, 1); break;
@@ -25,7 +26,13 @@ export function getFilteredValues<T extends { date: string }>(values: T[], perio
     case '1y': cutoff = subYears(now, 1); break;
     default: return values;
   }
-  return values.filter(v => new Date(v.date) >= cutoff);
+  cutoff.setHours(0, 0, 0, 0);
+  const result = values.filter(v => new Date(v.date + 'T00:00:00') >= cutoff);
+  // If filtered too aggressively, return at least last 2 points for trend
+  if (result.length < 2 && values.length >= 2) {
+    return values.slice(-2);
+  }
+  return result;
 }
 
 export function analyzeTrend(
@@ -55,7 +62,6 @@ export function analyzeTrend(
 }
 
 // ============ CONDITION (STATE) SYSTEM ============
-// Hubbard conditions: Non-Existence → Danger → Emergency → Normal → Affluence → Power
 export type StatCondition = 'non_existence' | 'danger' | 'emergency' | 'normal' | 'affluence' | 'power';
 
 export const CONDITIONS: { id: StatCondition; label: string; color: string; bgColor: string }[] = [
@@ -67,13 +73,6 @@ export const CONDITIONS: { id: StatCondition; label: string; color: string; bgCo
   { id: 'power', label: 'Могущество', color: 'text-purple-600 dark:text-purple-400', bgColor: 'bg-purple-100 dark:bg-purple-900/30' },
 ];
 
-/**
- * Calculate statistic condition based on trend analysis.
- * Logic:
- * - Compares current value trend over recent data points
- * - Uses consecutive weeks of decline/growth to determine condition
- * - For inverted stats, decline = good
- */
 export function calculateCondition(
   values: { value: number; date: string }[],
   inverted?: boolean
@@ -81,11 +80,8 @@ export function calculateCondition(
   if (values.length < 2) return 'non_existence';
 
   const sorted = [...values].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-  
-  // Take last 4 data points to analyze trend
   const recent = sorted.slice(-Math.min(sorted.length, 5));
   
-  // Count consecutive direction changes
   let consecutiveUp = 0;
   let consecutiveDown = 0;
   
@@ -102,17 +98,14 @@ export function calculateCondition(
     }
   }
 
-  // For inverted stats, swap up/down logic
   const effectiveUp = inverted ? consecutiveDown : consecutiveUp;
   const effectiveDown = inverted ? consecutiveUp : consecutiveDown;
 
-  // Overall trend percentage (first vs last of recent)
   const firstVal = recent[0].value;
   const lastVal = recent[recent.length - 1].value;
   const overallChange = firstVal !== 0 ? ((lastVal - firstVal) / firstVal) * 100 : 0;
   const effectiveChange = inverted ? -overallChange : overallChange;
 
-  // Determine condition
   if (effectiveDown >= 3 || effectiveChange < -30) return 'danger';
   if (effectiveDown >= 2 || effectiveChange < -15) return 'emergency';
   if (effectiveUp >= 4 && effectiveChange > 30) return 'power';
@@ -124,10 +117,37 @@ export function calculateCondition(
 }
 
 export function getConditionInfo(condition: StatCondition) {
-  return CONDITIONS.find(c => c.id === condition) ?? CONDITIONS[3]; // default normal
+  return CONDITIONS.find(c => c.id === condition) ?? CONDITIONS[3];
 }
 
-// Generate stable mock data for stats that have no real values
+/**
+ * Calculate linear regression trend line data points.
+ * Returns array of {date, trend} values for overlay on chart.
+ */
+export function calculateTrendLine(values: { date: string; value: number }[]): { date: string; trend: number }[] {
+  if (values.length < 2) return [];
+  
+  const sorted = [...values].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  const n = sorted.length;
+  
+  // x = index (0, 1, 2...), y = value
+  let sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0;
+  for (let i = 0; i < n; i++) {
+    sumX += i;
+    sumY += sorted[i].value;
+    sumXY += i * sorted[i].value;
+    sumX2 += i * i;
+  }
+  
+  const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
+  const intercept = (sumY - slope * sumX) / n;
+  
+  return sorted.map((v, i) => ({
+    date: v.date,
+    trend: Math.round((intercept + slope * i) * 100) / 100,
+  }));
+}
+
 export function generateMockHistory(baseVal: number, weeks: number = 52): { date: string; value: number }[] {
   return Array.from({ length: weeks }).map((_, i) => {
     const weekOffset = weeks - 1 - i;
