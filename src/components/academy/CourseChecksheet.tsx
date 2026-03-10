@@ -119,6 +119,14 @@ function ChecksheetItemEditor({ item, idx, totalItems, onUpdateItem, onMoveItem,
             />
           </div>
 
+          {/* Quiz questions editor — only for quiz type */}
+          {item.type === 'quiz' && (
+            <QuizQuestionEditor
+              questions={item.quizQuestions || []}
+              onChange={(qs) => onUpdateItem(item.id, 'quizQuestions' as any, qs as any)}
+            />
+          )}
+
           <div className="flex items-center gap-3 flex-wrap">
             <label className="flex items-center gap-1.5 text-[10px] font-display cursor-pointer">
               <input type="checkbox" checked={item.critical || false} onChange={() => onToggleFlag(item.id, 'critical')} className="rounded" />

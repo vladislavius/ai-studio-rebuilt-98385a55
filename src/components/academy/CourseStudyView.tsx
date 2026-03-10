@@ -347,12 +347,18 @@ export function CourseStudyView({ courseId, onBack, employeeId }: Props) {
                 )}
 
                 {/* Student response field for write-type steps */}
-                {employeeId && ['write', 'demo', 'clay_demo'].includes(activeItem.type) && !isItemCompleted(activeItem.id) && (
+                {employeeId && ['write', 'demo', 'clay_demo'].includes(activeItem.type) && (
                   <div className="space-y-2">
-                    <p className="text-[10px] font-display font-bold text-muted-foreground uppercase">Ваш ответ</p>
+                    <div className="flex items-center justify-between">
+                      <p className="text-[10px] font-display font-bold text-muted-foreground uppercase">Ваш ответ</p>
+                      {answerSaving && <span className="text-[10px] text-muted-foreground animate-pulse">Сохранение...</span>}
+                    </div>
                     <RichTextEditor
-                      content=""
-                      onChange={() => {}}
+                      content={studentAnswers[activeItem.id] || ''}
+                      onChange={(html) => {
+                        setStudentAnswers(prev => ({ ...prev, [activeItem.id]: html }));
+                        saveAnswer(activeItem.id, html);
+                      }}
                       placeholder={activeItem.type === 'write' ? 'Напишите ваш ответ, эссе или конспект...' : 'Опишите вашу демонстрацию...'}
                       minHeight="150px"
                     />
