@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { ChevronLeft, ChevronRight, ChevronDown, X, LogOut } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChevronDown, X, LogOut, Sun, Moon } from 'lucide-react';
 import { MAIN_NAV, STATS_NAV, SETTINGS_NAV, TOOLS_NAV } from '@/constants/navigation';
 import { useDepartments } from '@/hooks/useDepartments';
 import { useEmployees } from '@/hooks/useEmployees';
 import { ViewMode } from '@/types';
+import { useTheme } from '@/hooks/useTheme';
 
 interface AppSidebarProps {
   currentView: ViewMode;
@@ -32,6 +33,7 @@ export function AppSidebar({
   onLogout,
 }: AppSidebarProps) {
   const { data: employees } = useEmployees();
+  const { theme, toggleTheme } = useTheme();
   const employeeCount = employees?.length ?? 0;
   const sidebarWidth = isSidebarCollapsed ? 'w-20' : 'w-72';
   const sidebarMobileClasses = isMobileMenuOpen ? '' : '-translate-x-full md:translate-x-0';
@@ -148,14 +150,23 @@ export function AppSidebar({
             <p className="text-2xl font-display font-bold text-foreground">{employeeCount}</p>
           </div>
         )}
-        <button
-          onClick={onLogout}
-          className={`w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-destructive/30 text-destructive hover:bg-destructive/10 font-display font-medium transition-colors text-sm ${isSidebarCollapsed ? 'px-0' : ''}`}
-          title="Выход"
-        >
-          <LogOut size={18} />
-          {!isSidebarCollapsed && <span>Выход</span>}
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={toggleTheme}
+            className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-border text-muted-foreground hover:text-foreground hover:bg-accent font-display font-medium transition-colors text-sm ${isSidebarCollapsed ? 'flex-1 px-0' : ''}`}
+            title={theme === 'dark' ? 'Светлая тема' : 'Тёмная тема'}
+          >
+            {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+          </button>
+          <button
+            onClick={onLogout}
+            className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-destructive/30 text-destructive hover:bg-destructive/10 font-display font-medium transition-colors text-sm ${isSidebarCollapsed ? 'flex-1 px-0' : 'flex-1'}`}
+            title="Выход"
+          >
+            <LogOut size={18} />
+            {!isSidebarCollapsed && <span>Выход</span>}
+          </button>
+        </div>
       </div>
     </aside>
   );
