@@ -177,6 +177,10 @@ export function AcademyPage() {
           <ProgressDashboard />
         </TabsContent>
 
+        <TabsContent value="glossary">
+          <GlossaryManager />
+        </TabsContent>
+
         <TabsContent value="docs">
           <AcademyDocsPage />
         </TabsContent>
