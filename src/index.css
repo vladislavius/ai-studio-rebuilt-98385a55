@@ -6,30 +6,71 @@
 
 @layer base {
   :root {
-    /* Canvas — светлый */
+    /* Canvas — почти чёрный (dark default) */
+    --background: 0 0% 4%;
+    --foreground: 0 0% 92%;
+
+    --card: 0 0% 8%;
+    --card-foreground: 0 0% 92%;
+
+    --popover: 0 0% 8%;
+    --popover-foreground: 0 0% 92%;
+
+    --primary: 66 100% 71%;
+    --primary-foreground: 0 0% 4%;
+
+    --secondary: 235 100% 65%;
+    --secondary-foreground: 0 0% 98%;
+
+    --muted: 0 0% 12%;
+    --muted-foreground: 0 0% 55%;
+
+    --accent: 0 0% 12%;
+    --accent-foreground: 0 0% 92%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 0 0% 16%;
+    --input: 0 0% 14%;
+    --ring: 66 100% 71%;
+
+    --radius: 0.5rem;
+
+    --sidebar-background: 0 0% 6%;
+    --sidebar-foreground: 0 0% 75%;
+    --sidebar-primary: 66 100% 71%;
+    --sidebar-primary-foreground: 0 0% 4%;
+    --sidebar-accent: 0 0% 12%;
+    --sidebar-accent-foreground: 0 0% 92%;
+    --sidebar-border: 0 0% 14%;
+    --sidebar-ring: 66 100% 71%;
+
+    --surface: 0 0% 10%;
+    --surface-foreground: 0 0% 85%;
+    --glow: 66 100% 71%;
+    --info: 235 100% 65%;
+  }
+
+  .light {
     --background: 0 0% 98%;
     --foreground: 0 0% 10%;
 
-    /* Panels */
     --card: 0 0% 100%;
     --card-foreground: 0 0% 10%;
 
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 10%;
 
-    /* Accent — серно-жёлтый #F0FF6B */
     --primary: 66 100% 50%;
     --primary-foreground: 0 0% 4%;
 
-    /* Secondary — приглушённый синий #4C5CFF */
     --secondary: 235 100% 65%;
     --secondary-foreground: 0 0% 98%;
 
-    /* Muted */
     --muted: 0 0% 93%;
     --muted-foreground: 0 0% 40%;
 
-    /* Accent surface */
     --accent: 0 0% 94%;
     --accent-foreground: 0 0% 10%;
 
@@ -40,9 +81,6 @@
     --input: 0 0% 90%;
     --ring: 66 100% 50%;
 
-    --radius: 0.5rem;
-
-    /* Sidebar */
     --sidebar-background: 0 0% 100%;
     --sidebar-foreground: 0 0% 35%;
     --sidebar-primary: 66 100% 50%;
@@ -52,7 +90,6 @@
     --sidebar-border: 0 0% 90%;
     --sidebar-ring: 66 100% 50%;
 
-    /* Custom tokens */
     --surface: 0 0% 96%;
     --surface-foreground: 0 0% 25%;
     --glow: 66 100% 50%;
