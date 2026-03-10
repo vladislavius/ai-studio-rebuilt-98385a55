@@ -9,6 +9,7 @@ import { CheckoutRequestPanel } from './CheckoutRequestPanel';
 import { StepArtifactUpload } from './StepArtifactUpload';
 import { QuizStep } from './QuizStep';
 import { CourseCertificate } from './CourseCertificate';
+import { RichTextViewer, RichTextEditor } from './RichTextEditor';
 
 interface ChecksheetItem {
   id: string;
@@ -233,8 +234,21 @@ export function CourseStudyView({ courseId, onBack, employeeId }: Props) {
               <h2 className="text-lg font-display font-bold text-foreground">{activeItem.title || 'Без заголовка'}</h2>
 
               {activeItem.content && (
-                <div className="bg-muted/50 rounded-lg p-4 text-sm font-body text-foreground leading-relaxed whitespace-pre-wrap">
-                  {activeItem.content}
+                <div className="bg-muted/50 rounded-lg p-4">
+                  <RichTextViewer content={activeItem.content} />
+                </div>
+              )}
+
+              {/* Student response field for write-type steps */}
+              {employeeId && ['write', 'demo', 'clay_demo'].includes(activeItem.type) && !isItemCompleted(activeItem.id) && (
+                <div className="space-y-2">
+                  <p className="text-[10px] font-display font-bold text-muted-foreground uppercase">Ваш ответ</p>
+                  <RichTextEditor
+                    content=""
+                    onChange={() => {}}
+                    placeholder={activeItem.type === 'write' ? 'Напишите ваш ответ, эссе или конспект...' : 'Опишите вашу демонстрацию...'}
+                    minHeight="150px"
+                  />
                 </div>
               )}
 
