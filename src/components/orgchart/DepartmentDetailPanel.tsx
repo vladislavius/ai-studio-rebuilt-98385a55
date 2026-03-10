@@ -57,7 +57,10 @@ export function DepartmentDetailPanel({ dept, allDepts, employees, onClose, isAd
 
   const children = allDepts.filter(d => d.parent_id === dept.id).sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
   const deptAndChildIds = [dept.id, ...children.map(c => c.id)];
-  const deptEmployees = employees.filter(e => (e.department_ids ?? []).some(id => deptAndChildIds.includes(id)));
+  const deptEmployees = employees.filter(e =>
+    (e.department_ids ?? []).some(id => deptAndChildIds.includes(id)) ||
+    ((e as any).subdepartment_ids ?? []).some((id: string) => deptAndChildIds.includes(id))
+  );
   const filteredEmployees = deptEmployees.filter(e =>
     e.full_name.toLowerCase().includes(search.toLowerCase())
   );
