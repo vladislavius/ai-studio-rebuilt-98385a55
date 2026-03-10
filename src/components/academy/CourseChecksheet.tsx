@@ -38,7 +38,7 @@ const TYPE_LABELS: Record<string, { label: string; icon: typeof BookOpen }> = {
 
 function ChecksheetItemEditor({ item, idx, totalItems, onUpdateItem, onMoveItem, onRemoveItem, onToggleFlag, isNew }: {
   item: ChecksheetItem; idx: number; totalItems: number;
-  onUpdateItem: (id: string, field: keyof ChecksheetItem, value: string) => void;
+  onUpdateItem: (id: string, field: keyof ChecksheetItem, value: any) => void;
   onMoveItem: (index: number, dir: -1 | 1) => void;
   onRemoveItem: (id: string) => void;
   onToggleFlag: (id: string, flag: 'critical' | 'needsCheckout' | 'starred') => void;
