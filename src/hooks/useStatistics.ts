@@ -55,10 +55,12 @@ export function useStatisticValues(definitionId: string | null) {
 export function useCreateStatValue() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (val: { definition_id: string; date: string; value: number; value2?: number; condition?: string; notes?: string; created_by?: string }) => {
+    mutationFn: async (val: { definition_id: string; date: string; value: number; value2?: number; condition?: string; notes?: string }) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Необходима авторизация');
       const { data, error } = await supabase
         .from('statistic_values')
-        .insert([val])
+        .insert([{ ...val, created_by: user.id }])
         .select()
         .single();
       if (error) throw error;
