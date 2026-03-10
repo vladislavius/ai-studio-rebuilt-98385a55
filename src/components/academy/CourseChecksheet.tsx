@@ -204,62 +204,18 @@ export function CourseChecksheet({ courseId, onBack }: Props) {
           </div>
         )}
 
-        {items.map((item, idx) => {
-          const [expanded, setExpanded] = useState(false);
-          return (
-          <div key={item.id} className="bg-card border border-border rounded-xl p-4 space-y-2">
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-display font-bold text-muted-foreground w-6 text-center">{idx + 1}</span>
-              <div className="w-36">
-                <Select value={item.type} onValueChange={v => updateItem(item.id, 'type', v)}>
-                  <SelectTrigger className="h-8 text-xs bg-background"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(TYPE_LABELS).map(([key, { label }]) => (
-                      <SelectItem key={key} value={key}>{label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <Input value={item.title} onChange={e => updateItem(item.id, 'title', e.target.value)} placeholder="Заголовок задания" className="flex-1 h-8 text-xs bg-background" />
-              <button onClick={() => setExpanded(!expanded)} className="p-1 rounded hover:bg-accent text-muted-foreground">
-                <ChevronRight size={14} className={`transition-transform ${expanded ? 'rotate-90' : ''}`} />
-              </button>
-              <div className="flex gap-0.5">
-                <button onClick={() => moveItem(idx, -1)} disabled={idx === 0} className="p-1 rounded hover:bg-accent text-muted-foreground disabled:opacity-30"><ChevronUp size={14} /></button>
-                <button onClick={() => moveItem(idx, 1)} disabled={idx === items.length - 1} className="p-1 rounded hover:bg-accent text-muted-foreground disabled:opacity-30"><ChevronDown size={14} /></button>
-                <button onClick={() => removeItem(item.id)} className="p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive"><Trash2 size={14} /></button>
-              </div>
-            </div>
-            {expanded && (
-              <div className="space-y-3 pt-2">
-                <div>
-                  <label className="text-[10px] font-display font-bold text-muted-foreground uppercase block mb-1">Учебный материал (WYSIWYG)</label>
-                  <RichTextEditor
-                    content={item.content || ''}
-                    onChange={html => updateItem(item.id, 'content', html)}
-                    placeholder="Текст задания, материал для изучения, инструкции..."
-                    minHeight="150px"
-                  />
-                </div>
-                <div className="flex items-center gap-3 flex-wrap">
-                  <label className="flex items-center gap-1.5 text-[10px] font-display cursor-pointer">
-                    <input type="checkbox" checked={item.critical || false} onChange={() => toggleFlag(item.id, 'critical')} className="rounded" />
-                    <span className="text-destructive font-bold">🔴 Критический</span>
-                  </label>
-                  <label className="flex items-center gap-1.5 text-[10px] font-display cursor-pointer">
-                    <input type="checkbox" checked={item.needsCheckout || false} onChange={() => toggleFlag(item.id, 'needsCheckout')} className="rounded" />
-                    <span className="text-rose-500 font-bold">✅ Нужен чек-аут</span>
-                  </label>
-                  <label className="flex items-center gap-1.5 text-[10px] font-display cursor-pointer">
-                    <input type="checkbox" checked={item.starred || false} onChange={() => toggleFlag(item.id, 'starred')} className="rounded" />
-                    <span className="text-amber-500 font-bold">⭐ Звёздочный</span>
-                  </label>
-                </div>
-              </div>
-            )}
-          </div>
-          );
-        })}
+        {items.map((item, idx) => (
+          <ChecksheetItemEditor
+            key={item.id}
+            item={item}
+            idx={idx}
+            totalItems={items.length}
+            onUpdateItem={updateItem}
+            onMoveItem={moveItem}
+            onRemoveItem={removeItem}
+            onToggleFlag={toggleFlag}
+          />
+        ))}
       </div>
 
       {/* Assign modal */}
