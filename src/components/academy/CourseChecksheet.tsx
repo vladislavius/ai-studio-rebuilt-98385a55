@@ -114,10 +114,14 @@ export function CourseChecksheet({ courseId, onBack }: Props) {
   });
 
   const addItem = () => {
-    setItems(prev => [...prev, { id: crypto.randomUUID(), order: prev.length + 1, type: 'read', title: '', content: '' }]);
+    setItems(prev => [...prev, { id: crypto.randomUUID(), order: prev.length + 1, type: 'read', title: '', content: '', critical: false, needsCheckout: false, starred: false }]);
   };
 
   const removeItem = (id: string) => setItems(prev => prev.filter(it => it.id !== id));
+
+  const toggleFlag = (id: string, flag: 'critical' | 'needsCheckout' | 'starred') => {
+    setItems(prev => prev.map(it => it.id === id ? { ...it, [flag]: !it[flag] } : it));
+  };
 
   const moveItem = (index: number, dir: -1 | 1) => {
     const newItems = [...items];
