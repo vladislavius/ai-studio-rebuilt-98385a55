@@ -736,7 +736,7 @@ export function StatisticsPage({ selectedDeptId }: StatisticsPageProps) {
 
                 {/* Data editor overlay */}
                 {showEditForm && (
-                  <div className="px-5 pb-5">
+                  <div ref={editorRef} className="px-5 pb-5">
                     <div className="border border-border rounded-xl overflow-hidden">
                       <div className="p-4 bg-accent/30 border-b border-border">
                         <p className="text-xs font-display font-bold text-foreground uppercase">Редактор статистики</p>
