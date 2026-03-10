@@ -9,6 +9,7 @@ import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
 import { GenerateChecksheetModal } from './GenerateChecksheetModal';
 import { RichTextEditor } from './RichTextEditor';
+import { QuizQuestionEditor } from './QuizQuestionEditor';
 
 interface ChecksheetItem {
   id: string;
@@ -37,7 +38,7 @@ const TYPE_LABELS: Record<string, { label: string; icon: typeof BookOpen }> = {
 
 function ChecksheetItemEditor({ item, idx, totalItems, onUpdateItem, onMoveItem, onRemoveItem, onToggleFlag, isNew }: {
   item: ChecksheetItem; idx: number; totalItems: number;
-  onUpdateItem: (id: string, field: keyof ChecksheetItem, value: string) => void;
+  onUpdateItem: (id: string, field: keyof ChecksheetItem, value: any) => void;
   onMoveItem: (index: number, dir: -1 | 1) => void;
   onRemoveItem: (id: string) => void;
   onToggleFlag: (id: string, flag: 'critical' | 'needsCheckout' | 'starred') => void;
@@ -117,6 +118,14 @@ function ChecksheetItemEditor({ item, idx, totalItems, onUpdateItem, onMoveItem,
               minHeight="100px"
             />
           </div>
+
+          {/* Quiz questions editor — only for quiz type */}
+          {item.type === 'quiz' && (
+            <QuizQuestionEditor
+              questions={item.quizQuestions || []}
+              onChange={(qs) => onUpdateItem(item.id, 'quizQuestions' as any, qs as any)}
+            />
+          )}
 
           <div className="flex items-center gap-3 flex-wrap">
             <label className="flex items-center gap-1.5 text-[10px] font-display cursor-pointer">
@@ -240,7 +249,7 @@ export function CourseChecksheet({ courseId, onBack }: Props) {
     setItems(newItems);
   };
 
-  const updateItem = (id: string, field: keyof ChecksheetItem, value: string) => {
+  const updateItem = (id: string, field: keyof ChecksheetItem, value: any) => {
     setItems(prev => prev.map(it => it.id === id ? { ...it, [field]: value } : it));
   };
 

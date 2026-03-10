@@ -50,6 +50,8 @@ export function CourseStudyView({ courseId, onBack, employeeId }: Props) {
   const [activeIdx, setActiveIdx] = useState(0);
   const [completedIds, setCompletedIds] = useState<string[]>([]);
   const [showWordClearing, setShowWordClearing] = useState(false);
+  const [studentAnswers, setStudentAnswers] = useState<Record<string, string>>({});
+  const [answerSaving, setAnswerSaving] = useState(false);
 
   const { data: course } = useQuery({
     queryKey: ['course', courseId],
@@ -99,6 +101,29 @@ export function CourseStudyView({ courseId, onBack, employeeId }: Props) {
     ? (course.sections as unknown as ChecksheetItem[]).sort((a, b) => a.order - b.order)
     : [];
 
+  // Load saved student answers
+  const { data: savedAnswers } = useQuery({
+    queryKey: ['student-answers', courseId, employeeId],
+    queryFn: async () => {
+      if (!employeeId) return [];
+      const { data, error } = await supabase.from('student_answers')
+        .select('step_id, answer_html')
+        .eq('course_id', courseId)
+        .eq('employee_id', employeeId);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!employeeId,
+  });
+
+  useEffect(() => {
+    if (savedAnswers) {
+      const map: Record<string, string> = {};
+      savedAnswers.forEach(a => { map[a.step_id] = a.answer_html; });
+      setStudentAnswers(map);
+    }
+  }, [savedAnswers]);
+
   useEffect(() => {
     if (progressRecord?.completed_sections && Array.isArray(progressRecord.completed_sections)) {
       setCompletedIds(progressRecord.completed_sections as string[]);
@@ -107,6 +132,26 @@ export function CourseStudyView({ courseId, onBack, employeeId }: Props) {
       if (firstIncomplete >= 0) setActiveIdx(firstIncomplete);
     }
   }, [progressRecord, items.length]);
+
+  // Save student answer with debounce
+  const saveAnswer = async (stepId: string, html: string) => {
+    if (!employeeId) return;
+    setAnswerSaving(true);
+    try {
+      const { error } = await supabase.from('student_answers').upsert({
+        course_id: courseId,
+        employee_id: employeeId,
+        step_id: stepId,
+        answer_html: html,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'course_id,employee_id,step_id' });
+      if (error) throw error;
+    } catch (e: any) {
+      toast.error('Ошибка сохранения ответа');
+    } finally {
+      setAnswerSaving(false);
+    }
+  };
 
   const completeMut = useMutation({
     mutationFn: async (itemId: string) => {
@@ -156,7 +201,21 @@ export function CourseStudyView({ courseId, onBack, employeeId }: Props) {
   const isItemCompleted = (id: string) => completedIds.includes(id);
   const allComplete = progressPercent >= 100;
 
-  const isStepBlocked = (item: ChecksheetItem): { blocked: boolean; reason: string } => {
+  // Check if a step is accessible (sequential locking)
+  const isStepLocked = (idx: number): boolean => {
+    if (idx === 0) return false;
+    // All previous steps must be completed
+    for (let i = 0; i < idx; i++) {
+      if (!completedIds.includes(items[i].id)) return true;
+    }
+    return false;
+  };
+
+  const isStepBlocked = (item: ChecksheetItem, idx?: number): { blocked: boolean; reason: string } => {
+    // Sequential lock check
+    if (idx !== undefined && employeeId && isStepLocked(idx)) {
+      return { blocked: true, reason: 'Сначала выполните предыдущие шаги' };
+    }
     if ((item.type === 'checkout' || item.needsCheckout) && employeeId) {
       const req = checkoutRequests?.find(r => r.step_id === item.id);
       if (!req) return { blocked: true, reason: 'Требуется чек-аут супервизора' };
@@ -166,7 +225,7 @@ export function CourseStudyView({ courseId, onBack, employeeId }: Props) {
     return { blocked: false, reason: '' };
   };
 
-  const activeBlocked = activeItem ? isStepBlocked(activeItem) : { blocked: false, reason: '' };
+  const activeBlocked = activeItem ? isStepBlocked(activeItem, activeIdx) : { blocked: false, reason: '' };
 
   return (
     <div className="space-y-4">
@@ -208,11 +267,13 @@ export function CourseStudyView({ courseId, onBack, employeeId }: Props) {
               const Icon = meta.icon;
               const done = isItemCompleted(item.id);
               const isActive = idx === activeIdx;
-              const blocked = isStepBlocked(item);
+              const blocked = isStepBlocked(item, idx);
+              const locked = employeeId ? isStepLocked(idx) : false;
               return (
                 <button
                   key={item.id}
-                  onClick={() => setActiveIdx(idx)}
+                  onClick={() => { if (!locked) setActiveIdx(idx); }}
+                  disabled={locked}
                   className={`w-full text-left p-3 flex items-start gap-2.5 border-b border-border/50 transition-colors ${isActive ? 'bg-primary/5 border-l-2 border-l-primary' : 'hover:bg-accent/50'}`}
                 >
                   <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${done ? 'bg-primary text-primary-foreground' : blocked.blocked ? 'border border-amber-500 bg-amber-500/10' : 'border border-border'}`}>
@@ -286,12 +347,18 @@ export function CourseStudyView({ courseId, onBack, employeeId }: Props) {
                 )}
 
                 {/* Student response field for write-type steps */}
-                {employeeId && ['write', 'demo', 'clay_demo'].includes(activeItem.type) && !isItemCompleted(activeItem.id) && (
+                {employeeId && ['write', 'demo', 'clay_demo'].includes(activeItem.type) && (
                   <div className="space-y-2">
-                    <p className="text-[10px] font-display font-bold text-muted-foreground uppercase">Ваш ответ</p>
+                    <div className="flex items-center justify-between">
+                      <p className="text-[10px] font-display font-bold text-muted-foreground uppercase">Ваш ответ</p>
+                      {answerSaving && <span className="text-[10px] text-muted-foreground animate-pulse">Сохранение...</span>}
+                    </div>
                     <RichTextEditor
-                      content=""
-                      onChange={() => {}}
+                      content={studentAnswers[activeItem.id] || ''}
+                      onChange={(html) => {
+                        setStudentAnswers(prev => ({ ...prev, [activeItem.id]: html }));
+                        saveAnswer(activeItem.id, html);
+                      }}
                       placeholder={activeItem.type === 'write' ? 'Напишите ваш ответ, эссе или конспект...' : 'Опишите вашу демонстрацию...'}
                       minHeight="150px"
                     />
