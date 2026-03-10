@@ -500,6 +500,47 @@ export type Database = {
         }
         Relationships: []
       }
+      glossary_terms: {
+        Row: {
+          course_id: string | null
+          created_at: string
+          created_by: string | null
+          definition: string
+          example: string | null
+          id: string
+          term: string
+          updated_at: string
+        }
+        Insert: {
+          course_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          definition: string
+          example?: string | null
+          id?: string
+          term: string
+          updated_at?: string
+        }
+        Update: {
+          course_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          definition?: string
+          example?: string | null
+          id?: string
+          term?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "glossary_terms_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       onboarding_instances: {
         Row: {
           created_at: string
@@ -825,6 +866,70 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      word_clearing_logs: {
+        Row: {
+          cleared: boolean
+          cleared_at: string | null
+          course_id: string
+          created_at: string
+          employee_id: string
+          glossary_term_id: string | null
+          id: string
+          step_id: string
+          student_definition: string | null
+          student_example: string | null
+          term: string
+        }
+        Insert: {
+          cleared?: boolean
+          cleared_at?: string | null
+          course_id: string
+          created_at?: string
+          employee_id: string
+          glossary_term_id?: string | null
+          id?: string
+          step_id: string
+          student_definition?: string | null
+          student_example?: string | null
+          term: string
+        }
+        Update: {
+          cleared?: boolean
+          cleared_at?: string | null
+          course_id?: string
+          created_at?: string
+          employee_id?: string
+          glossary_term_id?: string | null
+          id?: string
+          step_id?: string
+          student_definition?: string | null
+          student_example?: string | null
+          term?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "word_clearing_logs_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "word_clearing_logs_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "word_clearing_logs_glossary_term_id_fkey"
+            columns: ["glossary_term_id"]
+            isOneToOne: false
+            referencedRelation: "glossary_terms"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
