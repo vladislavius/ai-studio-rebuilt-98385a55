@@ -3,7 +3,7 @@ import { TrendingUp, TrendingDown, LayoutDashboard, List, Layers, Download, Uplo
 import { useStatisticDefinitions, useAllStatisticValues, useStatisticValues, useCreateStatValue, useDeleteStatValue } from '@/hooks/useStatistics';
 import { useDepartments, DBDepartment } from '@/hooks/useDepartments';
 import { StatCard } from '@/components/statistics/StatCard';
-import { PERIODS, PeriodType, getFilteredValues, analyzeTrend } from '@/utils/statistics';
+import { PERIODS, PeriodType, getFilteredValues, analyzeTrend, calculateCondition, getConditionInfo, CONDITIONS } from '@/utils/statistics';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, ReferenceLine } from 'recharts';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -134,6 +134,15 @@ export function StatisticsPage({ selectedDeptId }: StatisticsPageProps) {
       .map(v => ({ date: v.date, value: Number(v.value) }));
     const filtered = getFilteredValues(sorted, selectedPeriod);
     return analyzeTrend(filtered, expandedDef?.inverted ?? false);
+  }, [expandedValues, selectedPeriod, expandedDef]);
+
+  const expandedCondition = useMemo(() => {
+    if (!expandedValues?.length) return 'non_existence' as const;
+    const sorted = [...expandedValues]
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+      .map(v => ({ date: v.date, value: Number(v.value) }));
+    const filtered = getFilteredValues(sorted, selectedPeriod);
+    return calculateCondition(filtered, expandedDef?.inverted ?? false);
   }, [expandedValues, selectedPeriod, expandedDef]);
 
   // CSV Export
@@ -325,6 +334,8 @@ export function StatisticsPage({ selectedDeptId }: StatisticsPageProps) {
     );
   };
 
+  const conditionInfo = getConditionInfo(expandedCondition);
+
   return (
     <div className="flex flex-col animate-in fade-in space-y-4">
       {/* Toolbar */}
@@ -432,7 +443,7 @@ export function StatisticsPage({ selectedDeptId }: StatisticsPageProps) {
       ) : displayMode === 'dashboard' ? (
         selectedDeptId ? renderDepartmentView() : renderDashboardOS()
       ) : (
-        <RenderListView definitions={definitions} onExpand={setExpandedStatId} />
+        <RenderListView definitions={definitions} valuesMap={valuesMap} selectedPeriod={selectedPeriod} onExpand={setExpandedStatId} />
       )}
 
       {/* ========== Expanded Stat Modal ========== */}
@@ -447,6 +458,17 @@ export function StatisticsPage({ selectedDeptId }: StatisticsPageProps) {
                   <p className="text-xs text-muted-foreground font-display mt-0.5">
                     {expandedOwnerDept?.full_name || expandedOwnerDept?.name || ''}
                   </p>
+                  <div className="flex items-center gap-2 mt-2">
+                    {expandedDef.inverted && (
+                      <span className="text-[9px] bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 px-2 py-0.5 rounded font-bold">ОБРАТНАЯ</span>
+                    )}
+                    {expandedDef.is_double && (
+                      <span className="text-[9px] bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 px-2 py-0.5 rounded font-bold">ДВОЙНАЯ</span>
+                    )}
+                    <span className={`text-[9px] px-2 py-0.5 rounded font-bold ${conditionInfo.bgColor} ${conditionInfo.color}`}>
+                      {conditionInfo.label.toUpperCase()}
+                    </span>
+                  </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <button onClick={() => { setExpandedStatId(null); setShowEditForm(false); }} className="p-2 text-muted-foreground hover:text-foreground rounded-lg hover:bg-accent">
@@ -456,8 +478,8 @@ export function StatisticsPage({ selectedDeptId }: StatisticsPageProps) {
               </div>
             </div>
 
-            {/* Current value + trend */}
-            <div className="p-5 grid grid-cols-2 gap-4">
+            {/* Current value + trend + condition */}
+            <div className="p-5 grid grid-cols-3 gap-4">
               <div className="bg-muted rounded-xl p-4">
                 <p className="text-[10px] font-display font-bold text-muted-foreground uppercase tracking-wider mb-1">Текущее значение</p>
                 <p className="text-2xl font-display font-bold text-foreground">
@@ -473,9 +495,33 @@ export function StatisticsPage({ selectedDeptId }: StatisticsPageProps) {
                   </p>
                 </div>
               </div>
+              <div className={`rounded-xl p-4 ${conditionInfo.bgColor}`}>
+                <p className="text-[10px] font-display font-bold text-muted-foreground uppercase tracking-wider mb-1">Состояние</p>
+                <p className={`text-lg font-display font-bold ${conditionInfo.color}`}>
+                  {conditionInfo.label}
+                </p>
+              </div>
             </div>
 
-            {/* Chart: Факт + План */}
+            {/* Condition scale */}
+            <div className="px-5 pb-4">
+              <div className="flex gap-1">
+                {CONDITIONS.map(c => (
+                  <div
+                    key={c.id}
+                    className={`flex-1 py-1.5 rounded text-center text-[7px] font-display font-bold uppercase transition-all ${
+                      expandedCondition === c.id
+                        ? `${c.bgColor} ${c.color} ring-2 ring-offset-1 ring-current`
+                        : 'bg-muted text-muted-foreground/40'
+                    }`}
+                  >
+                    {c.label.split(' ')[0]}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Chart: Факт + План - LINEAR lines */}
             <div className="px-5 pb-4">
               <div className="bg-muted rounded-xl p-4">
                 <p className="text-[10px] font-display font-bold text-muted-foreground uppercase tracking-wider mb-3">ГРАФИК ПЛАН/ФАКТ</p>
@@ -490,9 +536,9 @@ export function StatisticsPage({ selectedDeptId }: StatisticsPageProps) {
                         formatter={(val: number, name: string) => [val.toLocaleString('ru-RU'), name === 'fact' ? 'Факт' : 'План']}
                       />
                       <Legend formatter={(val) => val === 'fact' ? 'Факт' : 'План'} />
-                      <Line type="monotone" dataKey="fact" stroke="#10b981" strokeWidth={2} dot={{ fill: '#10b981', r: 3 }} name="fact" />
+                      <Line type="linear" dataKey="fact" stroke="#10b981" strokeWidth={2} dot={{ fill: '#10b981', r: 3, strokeWidth: 0 }} activeDot={{ r: 5 }} name="fact" />
                       {expandedChartData.some(d => d.plan != null) && (
-                        <Line type="monotone" dataKey="plan" stroke="hsl(var(--primary))" strokeWidth={1.5} strokeDasharray="5 5" dot={{ fill: 'hsl(var(--primary))', r: 3 }} name="plan" />
+                        <Line type="linear" dataKey="plan" stroke="#f43f5e" strokeWidth={1.5} strokeDasharray="5 5" dot={{ fill: '#f43f5e', r: 3, strokeWidth: 0 }} name="plan" />
                       )}
                     </LineChart>
                   </ResponsiveContainer>
@@ -618,7 +664,7 @@ export function StatisticsPage({ selectedDeptId }: StatisticsPageProps) {
   );
 }
 
-function RenderListView({ definitions, onExpand }: { definitions: any[]; onExpand: (id: string) => void }) {
+function RenderListView({ definitions, valuesMap, selectedPeriod, onExpand }: { definitions: any[]; valuesMap: Record<string, any[]>; selectedPeriod: PeriodType; onExpand: (id: string) => void }) {
   return (
     <div className="bg-card rounded-xl border border-border overflow-hidden">
       <table className="w-full text-sm text-left">
@@ -627,29 +673,43 @@ function RenderListView({ definitions, onExpand }: { definitions: any[]; onExpan
             <th className="px-4 py-3 text-xs">Название</th>
             <th className="px-4 py-3 text-xs">Тип</th>
             <th className="px-4 py-3 text-xs">ГСД</th>
+            <th className="px-4 py-3 text-xs">Состояние</th>
             <th className="px-4 py-3 text-xs text-right">Действия</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-border">
-          {definitions.map(stat => (
-            <tr key={stat.id} className="hover:bg-accent/50 transition-colors cursor-pointer" onClick={() => onExpand(stat.id)}>
-              <td className="px-4 py-3">
-                <div className="font-display font-semibold text-foreground text-sm">{stat.title}</div>
-                {stat.description && <div className="text-[10px] text-muted-foreground mt-0.5 line-clamp-1">{stat.description}</div>}
-              </td>
-              <td className="px-4 py-3">
-                <span className="px-2 py-0.5 rounded bg-muted text-muted-foreground text-xs font-display font-bold uppercase">{stat.owner_type}</span>
-              </td>
-              <td className="px-4 py-3">
-                {stat.is_favorite && <span className="text-[10px] bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 px-1.5 py-0.5 rounded font-display font-bold">ГСД</span>}
-              </td>
-              <td className="px-4 py-3 text-right">
-                <button onClick={(e) => { e.stopPropagation(); onExpand(stat.id); }} className="p-2 text-muted-foreground hover:text-primary hover:bg-accent rounded-lg transition-colors">
-                  <TrendingUp size={16} />
-                </button>
-              </td>
-            </tr>
-          ))}
+          {definitions.map(stat => {
+            const vals = valuesMap[stat.id] ?? [];
+            const sorted = [...vals].sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime());
+            const filtered = getFilteredValues(sorted, selectedPeriod);
+            const condition = calculateCondition(filtered, stat.inverted);
+            const ci = getConditionInfo(condition);
+
+            return (
+              <tr key={stat.id} className="hover:bg-accent/50 transition-colors cursor-pointer" onClick={() => onExpand(stat.id)}>
+                <td className="px-4 py-3">
+                  <div className="font-display font-semibold text-foreground text-sm">{stat.title}</div>
+                  {stat.description && <div className="text-[10px] text-muted-foreground mt-0.5 line-clamp-1">{stat.description}</div>}
+                </td>
+                <td className="px-4 py-3">
+                  <span className="px-2 py-0.5 rounded bg-muted text-muted-foreground text-xs font-display font-bold uppercase">{stat.owner_type}</span>
+                </td>
+                <td className="px-4 py-3">
+                  {stat.is_favorite && <span className="text-[10px] bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 px-1.5 py-0.5 rounded font-display font-bold">ГСД</span>}
+                </td>
+                <td className="px-4 py-3">
+                  <span className={`text-[10px] px-2 py-0.5 rounded font-display font-bold ${ci.bgColor} ${ci.color}`}>
+                    {ci.label}
+                  </span>
+                </td>
+                <td className="px-4 py-3 text-right">
+                  <button onClick={(e) => { e.stopPropagation(); onExpand(stat.id); }} className="p-2 text-muted-foreground hover:text-primary hover:bg-accent rounded-lg transition-colors">
+                    <TrendingUp size={16} />
+                  </button>
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>
