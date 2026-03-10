@@ -1,7 +1,7 @@
 import { useState, useMemo, useRef } from 'react';
 import { TrendingUp, TrendingDown, LayoutDashboard, List, Layers, Download, Upload, Edit2, Trash2, Plus, X, Settings, Save, Info, ChevronDown } from 'lucide-react';
 import { useStatisticDefinitions, useAllStatisticValues, useStatisticValues, useCreateStatValue, useDeleteStatValue, useUpdateStatValue } from '@/hooks/useStatistics';
-import { useUpdateStatDefinition } from '@/hooks/useOrgChartMutations';
+import { useUpdateStatDefinition, useDeleteStatDefinition } from '@/hooks/useOrgChartMutations';
 import { useDepartments, DBDepartment } from '@/hooks/useDepartments';
 import { useEmployees } from '@/hooks/useEmployees';
 import { StatCard } from '@/components/statistics/StatCard';
