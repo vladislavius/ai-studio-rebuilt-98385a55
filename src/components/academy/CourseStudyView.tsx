@@ -8,7 +8,7 @@ import { toast } from 'sonner';
 interface ChecksheetItem {
   id: string;
   order: number;
-  type: 'read' | 'write' | 'demo' | 'drill' | 'starrate';
+  type: 'read' | 'write' | 'demo' | 'drill' | 'starrate' | 'clay_demo' | 'checkout' | 'word_clearing';
   title: string;
   content: string;
 }
