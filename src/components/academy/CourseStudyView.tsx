@@ -20,6 +20,7 @@ interface ChecksheetItem {
   type: 'read' | 'write' | 'demo' | 'drill' | 'starrate' | 'clay_demo' | 'checkout' | 'word_clearing' | 'quiz';
   title: string;
   content: string;
+  task?: string;
   critical?: boolean;
   needsCheckout?: boolean;
   starred?: boolean;
@@ -258,6 +259,16 @@ export function CourseStudyView({ courseId, onBack, employeeId }: Props) {
                 <p className="text-[10px] font-display font-bold text-muted-foreground uppercase tracking-wider border-b border-border pb-2">
                   Задание и действия
                 </p>
+
+                {/* Task / assignment instructions from admin */}
+                {activeItem.task && activeItem.task.replace(/<[^>]*>/g, '').trim() && (
+                  <div className="space-y-1.5">
+                    <p className="text-[10px] font-display font-bold text-muted-foreground uppercase">📝 Задание</p>
+                    <div className="p-3 bg-primary/5 border border-primary/10 rounded-xl prose prose-sm dark:prose-invert max-w-none">
+                      <RichTextViewer content={activeItem.task} />
+                    </div>
+                  </div>
+                )}
 
                 {/* Student response field for write-type steps */}
                 {employeeId && ['write', 'demo', 'clay_demo'].includes(activeItem.type) && !isItemCompleted(activeItem.id) && (

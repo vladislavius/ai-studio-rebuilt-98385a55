@@ -16,6 +16,7 @@ interface ChecksheetItem {
   type: 'read' | 'write' | 'demo' | 'drill' | 'starrate' | 'clay_demo' | 'checkout' | 'word_clearing' | 'quiz';
   title: string;
   content: string;
+  task?: string;
   critical?: boolean;
   needsCheckout?: boolean;
   starred?: boolean;
@@ -87,22 +88,36 @@ function ChecksheetItemEditor({ item, idx, totalItems, onUpdateItem, onMoveItem,
       </div>
 
       {expanded && (
-        <div className="border-t border-border p-4 space-y-3 bg-muted/20">
+        <div className="border-t border-border p-4 space-y-4 bg-muted/20">
+          {/* Study material */}
           <div>
-            <label className="text-[10px] font-display font-bold text-muted-foreground uppercase block mb-1">Учебный материал (WYSIWYG)</label>
+            <label className="text-[10px] font-display font-bold text-muted-foreground uppercase block mb-1">📖 Учебный материал (статья)</label>
             {!hasContent && (
               <div className="flex items-center gap-2 mb-2 p-2 rounded-lg bg-destructive/5 border border-destructive/20">
                 <AlertTriangle size={14} className="text-destructive shrink-0" />
-                <span className="text-[11px] font-body text-muted-foreground">Добавьте учебный материал для этого шага — студенты увидят его при прохождении курса</span>
+                <span className="text-[11px] font-body text-muted-foreground">Добавьте учебный материал — студент увидит его в центральной панели</span>
               </div>
             )}
             <RichTextEditor
               content={item.content || ''}
               onChange={html => onUpdateItem(item.id, 'content', html)}
-              placeholder="Текст задания, материал для изучения, инструкции..."
+              placeholder="Текст статьи, материал для изучения..."
               minHeight="150px"
             />
           </div>
+
+          {/* Task / assignment */}
+          <div>
+            <label className="text-[10px] font-display font-bold text-muted-foreground uppercase block mb-1">📝 Задание для студента</label>
+            <p className="text-[10px] text-muted-foreground mb-1.5">Что именно должен сделать студент? Вопросы, инструкции, критерии выполнения.</p>
+            <RichTextEditor
+              content={item.task || ''}
+              onChange={html => onUpdateItem(item.id, 'task', html)}
+              placeholder="Напишите задание: вопросы, что нужно продемонстрировать, описать, выполнить..."
+              minHeight="100px"
+            />
+          </div>
+
           <div className="flex items-center gap-3 flex-wrap">
             <label className="flex items-center gap-1.5 text-[10px] font-display cursor-pointer">
               <input type="checkbox" checked={item.critical || false} onChange={() => onToggleFlag(item.id, 'critical')} className="rounded" />
