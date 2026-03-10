@@ -1,10 +1,11 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { TrendingUp, LayoutDashboard, List, Layers, ChevronUp, ChevronDown, Award, Download, Upload, Edit2 } from 'lucide-react';
 import { useStatisticDefinitions, useStatisticValues, useCreateStatValue } from '@/hooks/useStatistics';
 import { useDepartments, DBDepartment } from '@/hooks/useDepartments';
 import { StatCard } from '@/components/statistics/StatCard';
 import { PERIODS, PeriodType, getFilteredValues, analyzeTrend, generateMockHistory } from '@/utils/statistics';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { toast } from 'sonner';
 
 interface StatisticsPageProps {
   selectedDeptId: string | null;
@@ -137,6 +138,68 @@ export function StatisticsPage({ selectedDeptId }: StatisticsPageProps) {
   }, [expandedStatId, expandedValues, selectedPeriod]);
 
   const expandedDef = expandedStatId ? definitions.find(d => d.id === expandedStatId) : null;
+  const createStatValue = useCreateStatValue();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // ---- CSV Export ----
+  const handleExportCSV = () => {
+    const relevantDefs = selectedDeptId
+      ? definitions.filter(d => allSelectedIds.includes(d.owner_id ?? ''))
+      : definitions;
+    if (!relevantDefs.length) { toast.error('Нет данных для экспорта'); return; }
+
+    const rows: string[] = ['Название;Тип;Владелец;Дата;Значение'];
+    relevantDefs.forEach(def => {
+      const vals = getStatValues(def.id);
+      const filtered = getFilteredValues(
+        [...vals].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()),
+        selectedPeriod
+      );
+      const ownerDept = departments?.find(d => d.id === def.owner_id);
+      filtered.forEach(v => {
+        rows.push(`"${def.title}";"${def.owner_type}";"${ownerDept?.name ?? def.owner_id ?? ''}";"${v.date}";${v.value}`);
+      });
+    });
+
+    const blob = new Blob(['\uFEFF' + rows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `statistics_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success('CSV экспортирован');
+  };
+
+  // ---- CSV Import ----
+  const handleImportCSV = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const text = ev.target?.result as string;
+      const lines = text.split('\n').filter(l => l.trim());
+      if (lines.length < 2) { toast.error('Файл пуст или неверный формат'); return; }
+
+      let imported = 0;
+      // Skip header, parse rows
+      for (let i = 1; i < lines.length; i++) {
+        const cols = lines[i].split(';').map(c => c.replace(/^"|"$/g, '').trim());
+        if (cols.length < 5) continue;
+        const [title, , , date, valueStr] = cols;
+        const value = parseFloat(valueStr);
+        if (isNaN(value) || !date) continue;
+        // Find matching definition by title
+        const def = definitions.find(d => d.title === title);
+        if (!def) continue;
+        createStatValue.mutate({ definition_id: def.id, date, value });
+        imported++;
+      }
+      toast.success(`Импортировано ${imported} значений`);
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  };
 
   // =================== RENDER ===================
 
@@ -305,12 +368,21 @@ export function StatisticsPage({ selectedDeptId }: StatisticsPageProps) {
             </button>
           </div>
 
-          {/* Action buttons placeholder */}
+          {/* Action buttons */}
           <div className="flex gap-2">
-            <button className="p-2 rounded-lg border border-border text-muted-foreground hover:text-foreground hover:bg-accent transition-colors" title="Скачать CSV">
+            <button
+              onClick={handleExportCSV}
+              className="p-2 rounded-lg border border-border text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+              title="Скачать CSV"
+            >
               <Download size={16} />
             </button>
-            <button className="p-2 rounded-lg border border-border text-muted-foreground hover:text-foreground hover:bg-accent transition-colors" title="Импорт">
+            <input ref={fileInputRef} type="file" accept=".csv" className="hidden" onChange={handleImportCSV} />
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="p-2 rounded-lg border border-border text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+              title="Импорт CSV"
+            >
               <Upload size={16} />
             </button>
           </div>
