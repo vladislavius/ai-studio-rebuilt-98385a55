@@ -101,6 +101,29 @@ export function CourseStudyView({ courseId, onBack, employeeId }: Props) {
     ? (course.sections as unknown as ChecksheetItem[]).sort((a, b) => a.order - b.order)
     : [];
 
+  // Load saved student answers
+  const { data: savedAnswers } = useQuery({
+    queryKey: ['student-answers', courseId, employeeId],
+    queryFn: async () => {
+      if (!employeeId) return [];
+      const { data, error } = await supabase.from('student_answers')
+        .select('step_id, answer_html')
+        .eq('course_id', courseId)
+        .eq('employee_id', employeeId);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!employeeId,
+  });
+
+  useEffect(() => {
+    if (savedAnswers) {
+      const map: Record<string, string> = {};
+      savedAnswers.forEach(a => { map[a.step_id] = a.answer_html; });
+      setStudentAnswers(map);
+    }
+  }, [savedAnswers]);
+
   useEffect(() => {
     if (progressRecord?.completed_sections && Array.isArray(progressRecord.completed_sections)) {
       setCompletedIds(progressRecord.completed_sections as string[]);
@@ -109,6 +132,26 @@ export function CourseStudyView({ courseId, onBack, employeeId }: Props) {
       if (firstIncomplete >= 0) setActiveIdx(firstIncomplete);
     }
   }, [progressRecord, items.length]);
+
+  // Save student answer with debounce
+  const saveAnswer = async (stepId: string, html: string) => {
+    if (!employeeId) return;
+    setAnswerSaving(true);
+    try {
+      const { error } = await supabase.from('student_answers').upsert({
+        course_id: courseId,
+        employee_id: employeeId,
+        step_id: stepId,
+        answer_html: html,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'course_id,employee_id,step_id' });
+      if (error) throw error;
+    } catch (e: any) {
+      toast.error('Ошибка сохранения ответа');
+    } finally {
+      setAnswerSaving(false);
+    }
+  };
 
   const completeMut = useMutation({
     mutationFn: async (itemId: string) => {
