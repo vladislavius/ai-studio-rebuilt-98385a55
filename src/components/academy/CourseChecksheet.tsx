@@ -225,9 +225,20 @@ export function CourseChecksheet({ courseId, onBack }: Props) {
               </div>
             </div>
             <Textarea value={item.content} onChange={e => updateItem(item.id, 'content', e.target.value)} placeholder="Текст задания, ссылка на материал или содержание статьи..." rows={2} className="text-xs bg-background resize-none" />
-          </div>
-        ))}
-      </div>
+            <div className="flex items-center gap-3 flex-wrap">
+              <label className="flex items-center gap-1.5 text-[10px] font-display cursor-pointer">
+                <input type="checkbox" checked={item.critical || false} onChange={() => toggleFlag(item.id, 'critical')} className="rounded" />
+                <span className="text-destructive font-bold">🔴 Критический</span>
+              </label>
+              <label className="flex items-center gap-1.5 text-[10px] font-display cursor-pointer">
+                <input type="checkbox" checked={item.needsCheckout || false} onChange={() => toggleFlag(item.id, 'needsCheckout')} className="rounded" />
+                <span className="text-rose-500 font-bold">✅ Нужен чек-аут</span>
+              </label>
+              <label className="flex items-center gap-1.5 text-[10px] font-display cursor-pointer">
+                <input type="checkbox" checked={item.starred || false} onChange={() => toggleFlag(item.id, 'starred')} className="rounded" />
+                <span className="text-amber-500 font-bold">⭐ Звёздочный</span>
+              </label>
+            </div>
 
       {/* Assign modal */}
       {showAssign && (
