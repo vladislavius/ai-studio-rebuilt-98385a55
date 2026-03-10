@@ -136,16 +136,16 @@
 }
 
 ::-webkit-scrollbar-track {
-  background: hsl(0 0% 95%);
+  background: hsl(var(--muted));
 }
 
 ::-webkit-scrollbar-thumb {
-  background: hsl(0 0% 78%);
+  background: hsl(var(--border));
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: hsl(0 0% 65%);
+  background: hsl(var(--muted-foreground));
 }
 
 /* Cybernetic card glow */
