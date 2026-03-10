@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, BookOpen, PenLine, Eye, Dumbbell, Star, Check, Award, Sparkles, Search, ClipboardCheck } from 'lucide-react';
+import { ArrowLeft, BookOpen, PenLine, Eye, Dumbbell, Star, Check, Award, Sparkles, Search, ClipboardCheck, HelpCircle } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
+import { WordClearingPanel } from './WordClearingPanel';
 
 interface ChecksheetItem {
   id: string;
@@ -34,6 +35,7 @@ export function CourseStudyView({ courseId, onBack, employeeId }: Props) {
   const qc = useQueryClient();
   const [activeIdx, setActiveIdx] = useState(0);
   const [completedIds, setCompletedIds] = useState<string[]>([]);
+  const [showWordClearing, setShowWordClearing] = useState(false);
 
   const { data: course } = useQuery({
     queryKey: ['course', courseId],
@@ -176,6 +178,24 @@ export function CourseStudyView({ courseId, onBack, employeeId }: Props) {
                 <div className="bg-muted/50 rounded-lg p-4 text-sm font-body text-foreground leading-relaxed whitespace-pre-wrap">
                   {activeItem.content}
                 </div>
+              )}
+
+              {/* Word Clearing button */}
+              {employeeId && (
+                <button onClick={() => setShowWordClearing(!showWordClearing)}
+                  className="px-4 py-2 border border-border rounded-lg text-xs font-display font-bold text-muted-foreground hover:bg-accent flex items-center gap-1.5">
+                  <HelpCircle size={14} /> {showWordClearing ? 'Скрыть прояснение слов' : 'Не понимаю слово'}
+                </button>
+              )}
+
+              {/* Word Clearing Panel */}
+              {showWordClearing && employeeId && activeItem && (
+                <WordClearingPanel
+                  courseId={courseId}
+                  employeeId={employeeId}
+                  stepId={activeItem.id}
+                  onClose={() => setShowWordClearing(false)}
+                />
               )}
 
               {employeeId && !isItemCompleted(activeItem.id) && (
