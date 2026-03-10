@@ -32,7 +32,7 @@ export function StatisticsPage({ selectedDeptId }: StatisticsPageProps) {
   const { data: allDefinitions, isLoading } = useStatisticDefinitions();
   const { data: allValuesMap } = useAllStatisticValues();
   const { data: departments } = useDepartments();
-  const { employees } = useEmployees();
+  const { data: employees } = useEmployees();
   const [selectedPeriod, setSelectedPeriod] = useState<PeriodType>('3w');
   const [displayMode, setDisplayMode] = useState<'dashboard' | 'list'>('dashboard');
   const [trendFilter, setTrendFilter] = useState<'all' | 'growing' | 'declining' | 'achieved' | 'not_achieved'>('all');
