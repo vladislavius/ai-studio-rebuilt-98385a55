@@ -326,6 +326,9 @@ export function CourseChecksheet({ courseId, onBack }: Props) {
           <h1 className="text-xl font-display font-bold text-foreground">Контрольный лист</h1>
           <p className="text-xs text-muted-foreground font-body">{items.length} пунктов • Назначено: {assignedIds.size} сотр.</p>
         </div>
+        <button onClick={() => setShowHistory(!showHistory)} className="px-3 py-2 border border-border rounded-lg text-xs font-display font-bold text-muted-foreground hover:bg-accent flex items-center gap-1.5">
+          <History size={14} /> Версии{versions?.length ? ` (${versions.length})` : ''}
+        </button>
         <button onClick={() => setShowAssign(true)} className="px-3 py-2 border border-border rounded-lg text-xs font-display font-bold text-muted-foreground hover:bg-accent flex items-center gap-1.5">
           <UserPlus size={14} /> Назначить
         </button>
