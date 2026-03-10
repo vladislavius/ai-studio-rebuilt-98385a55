@@ -405,7 +405,7 @@ export function StatisticsPage({ selectedDeptId }: StatisticsPageProps) {
         <div className="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-2">
           <div className="flex gap-1 bg-muted p-1 rounded-lg w-full md:w-auto">
             <button onClick={() => setDisplayMode('dashboard')} className={`flex-1 md:flex-none px-3 py-2 rounded-md text-xs font-display font-bold transition-colors flex items-center justify-center gap-1.5 ${displayMode === 'dashboard' ? 'bg-card shadow text-primary' : 'text-muted-foreground'}`}>
-              <LayoutDashboard size={14} />Дашборд ОС
+              <LayoutDashboard size={14} />{t('stats.title')}
             </button>
             <button onClick={() => setDisplayMode('list')} className={`flex-1 md:flex-none px-3 py-2 rounded-md text-xs font-display font-bold transition-colors flex items-center justify-center gap-1.5 ${displayMode === 'list' ? 'bg-card shadow text-primary' : 'text-muted-foreground'}`}>
               <List size={14} />Список
