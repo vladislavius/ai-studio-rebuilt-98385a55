@@ -10,6 +10,8 @@ import { StepArtifactUpload } from './StepArtifactUpload';
 import { QuizStep } from './QuizStep';
 import { CourseCertificate } from './CourseCertificate';
 import { RichTextViewer, RichTextEditor } from './RichTextEditor';
+import { TrainingChat } from './TrainingChat';
+import { JitsiVideoCall } from './JitsiVideoCall';
 
 interface ChecksheetItem {
   id: string;
@@ -323,6 +325,10 @@ export function CourseStudyView({ courseId, onBack, employeeId }: Props) {
                   <Check size={16} /> Пункт выполнен
                 </div>
               )}
+              {/* Step comments */}
+              {employeeId && activeItem && (
+                <TrainingChat courseId={courseId} employeeId={employeeId} stepId={activeItem.id} mode="step_comment" />
+              )}
             </div>
           ) : (
             <div className="text-center py-12">
@@ -331,6 +337,16 @@ export function CourseStudyView({ courseId, onBack, employeeId }: Props) {
           )}
         </div>
       </div>
+
+      {/* Floating chat with curator */}
+      {employeeId && (
+        <TrainingChat courseId={courseId} employeeId={employeeId} mode="chat" />
+      )}
+
+      {/* Floating video call button */}
+      {employeeId && (
+        <JitsiVideoCall courseId={courseId} employeeId={employeeId} courseName={course?.title} />
+      )}
     </div>
   );
 }
