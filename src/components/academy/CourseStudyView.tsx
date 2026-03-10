@@ -9,6 +9,7 @@ import { CheckoutRequestPanel } from './CheckoutRequestPanel';
 import { StepArtifactUpload } from './StepArtifactUpload';
 import { QuizStep } from './QuizStep';
 import { CourseCertificate } from './CourseCertificate';
+import { RichTextViewer, RichTextEditor } from './RichTextEditor';
 
 interface ChecksheetItem {
   id: string;
