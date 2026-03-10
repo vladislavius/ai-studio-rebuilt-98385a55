@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { GraduationCap, BookOpen, Plus, Trash2, Eye, EyeOff, ArrowLeft, ClipboardList, BarChart3, FileText } from 'lucide-react';
+import { GraduationCap, BookOpen, Plus, Trash2, Eye, EyeOff, ArrowLeft, ClipboardList, BarChart3, FileText, Search as SearchIcon } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
