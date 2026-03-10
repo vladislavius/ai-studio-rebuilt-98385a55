@@ -110,7 +110,22 @@ export function CourseStudyView({ courseId, onBack, employeeId }: Props) {
 
   const completeMut = useMutation({
     mutationFn: async (itemId: string) => {
-      if (!employeeId || !progressRecord) return;
+      if (!employeeId) return;
+      
+      let progressId = progressRecord?.id;
+      
+      // Auto-create progress record if it doesn't exist
+      if (!progressId) {
+        const { data: newProgress, error: insertErr } = await supabase.from('course_progress').insert({
+          course_id: courseId,
+          employee_id: employeeId,
+          progress_percent: 0,
+          completed_sections: [],
+        }).select('id').single();
+        if (insertErr) throw insertErr;
+        progressId = newProgress.id;
+      }
+      
       const newCompleted = [...completedIds, itemId];
       const percent = Math.round((newCompleted.length / items.length) * 100);
       const isComplete = percent >= 100;
@@ -118,7 +133,7 @@ export function CourseStudyView({ courseId, onBack, employeeId }: Props) {
         completed_sections: newCompleted,
         progress_percent: percent,
         ...(isComplete ? { completed_at: new Date().toISOString() } : {}),
-      }).eq('id', progressRecord.id);
+      }).eq('id', progressId);
       if (error) throw error;
       return { newCompleted, percent, isComplete };
     },
