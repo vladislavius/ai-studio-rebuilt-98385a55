@@ -246,7 +246,6 @@ export function StatisticsPage({ selectedDeptId }: StatisticsPageProps) {
     });
     setEditValue('');
     setEditValue2('');
-    setShowEditForm(false);
   };
 
   const handleSaveManualCondition = async (condition: StatCondition) => {
