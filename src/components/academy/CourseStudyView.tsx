@@ -12,6 +12,7 @@ import { CourseCertificate } from './CourseCertificate';
 import { RichTextViewer, RichTextEditor } from './RichTextEditor';
 import { TrainingChat } from './TrainingChat';
 import { JitsiVideoCall } from './JitsiVideoCall';
+import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 
 interface ChecksheetItem {
   id: string;
@@ -139,14 +140,12 @@ export function CourseStudyView({ courseId, onBack, employeeId }: Props) {
   const isItemCompleted = (id: string) => completedIds.includes(id);
   const allComplete = progressPercent >= 100;
 
-  // Check if step is blocked (checkout type or needsCheckout, and no approved checkout)
   const isStepBlocked = (item: ChecksheetItem): { blocked: boolean; reason: string } => {
     if ((item.type === 'checkout' || item.needsCheckout) && employeeId) {
       const req = checkoutRequests?.find(r => r.step_id === item.id);
       if (!req) return { blocked: true, reason: 'Требуется чек-аут супервизора' };
       if (req.status === 'pending') return { blocked: true, reason: 'Чек-аут ожидает проверки' };
       if (req.status === 'rejected') return { blocked: true, reason: 'Чек-аут не пройден — пересдача' };
-      // approved — not blocked
     }
     return { blocked: false, reason: '' };
   };
@@ -180,13 +179,14 @@ export function CourseStudyView({ courseId, onBack, employeeId }: Props) {
         />
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-4">
-        {/* Sidebar */}
-        <div className="bg-card border border-border rounded-xl overflow-hidden">
+      {/* Main 3-column layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-[240px_1fr] gap-0 border border-border rounded-xl overflow-hidden" style={{ minHeight: '70vh' }}>
+        {/* Sidebar — checksheet list */}
+        <div className="bg-card border-r border-border overflow-hidden flex flex-col">
           <div className="p-3 border-b border-border">
             <p className="text-[10px] font-display font-bold text-muted-foreground uppercase">Контрольный лист</p>
           </div>
-          <div className="max-h-[60vh] overflow-y-auto">
+          <div className="flex-1 overflow-y-auto">
             {items.map((item, idx) => {
               const meta = TYPE_META[item.type] || TYPE_META.read;
               const Icon = meta.icon;
@@ -219,123 +219,143 @@ export function CourseStudyView({ courseId, onBack, employeeId }: Props) {
           </div>
         </div>
 
-        {/* Main content */}
-        <div className="bg-card border border-border rounded-xl p-6">
-          {activeItem ? (
-            <div className="space-y-4">
-              <div className="flex items-center gap-2">
-                {(() => { const m = TYPE_META[activeItem.type] || TYPE_META.read; const I = m.icon; return <I size={18} className={m.color} />; })()}
-                <span className="text-[10px] font-display font-bold text-muted-foreground uppercase tracking-wider">
-                  {TYPE_META[activeItem.type]?.label || activeItem.type}
-                </span>
-                <span className="text-[10px] text-muted-foreground">• Пункт {activeIdx + 1} из {items.length}</span>
-                {activeItem.critical && <span className="text-[10px] px-1.5 py-0.5 bg-destructive/10 text-destructive rounded font-display font-bold">Критический</span>}
-                {activeItem.starred && <span className="text-[10px] px-1.5 py-0.5 bg-amber-500/10 text-amber-600 rounded font-display font-bold">⭐ Звёздочный</span>}
+        {/* Right area — resizable: Material | Actions */}
+        {activeItem ? (
+          <ResizablePanelGroup direction="horizontal" className="min-h-0">
+            {/* Material panel */}
+            <ResizablePanel defaultSize={55} minSize={30}>
+              <div className="h-full overflow-y-auto p-6 bg-background">
+                <div className="flex items-center gap-2 mb-4">
+                  {(() => { const m = TYPE_META[activeItem.type] || TYPE_META.read; const I = m.icon; return <I size={18} className={m.color} />; })()}
+                  <span className="text-[10px] font-display font-bold text-muted-foreground uppercase tracking-wider">
+                    {TYPE_META[activeItem.type]?.label || activeItem.type}
+                  </span>
+                  <span className="text-[10px] text-muted-foreground">• Пункт {activeIdx + 1} из {items.length}</span>
+                  {activeItem.critical && <span className="text-[10px] px-1.5 py-0.5 bg-destructive/10 text-destructive rounded font-display font-bold">Критический</span>}
+                  {activeItem.starred && <span className="text-[10px] px-1.5 py-0.5 bg-amber-500/10 text-amber-600 rounded font-display font-bold">⭐ Звёздочный</span>}
+                </div>
+
+                <h2 className="text-xl font-display font-bold text-foreground mb-4">{activeItem.title || 'Без заголовка'}</h2>
+
+                {activeItem.content ? (
+                  <div className="prose prose-sm dark:prose-invert max-w-none font-body leading-relaxed">
+                    <RichTextViewer content={activeItem.content} />
+                  </div>
+                ) : (
+                  <div className="text-center py-12 text-muted-foreground/50">
+                    <BookOpen size={32} className="mx-auto mb-2" />
+                    <p className="text-sm font-body">Материал для этого шага не добавлен</p>
+                  </div>
+                )}
               </div>
+            </ResizablePanel>
 
-              <h2 className="text-lg font-display font-bold text-foreground">{activeItem.title || 'Без заголовка'}</h2>
+            <ResizableHandle withHandle />
 
-              {activeItem.content && (
-                <div className="bg-muted/50 rounded-lg p-4">
-                  <RichTextViewer content={activeItem.content} />
-                </div>
-              )}
+            {/* Actions panel */}
+            <ResizablePanel defaultSize={45} minSize={25}>
+              <div className="h-full overflow-y-auto p-5 bg-card border-l-0 space-y-4">
+                <p className="text-[10px] font-display font-bold text-muted-foreground uppercase tracking-wider border-b border-border pb-2">
+                  Задание и действия
+                </p>
 
-              {/* Student response field for write-type steps */}
-              {employeeId && ['write', 'demo', 'clay_demo'].includes(activeItem.type) && !isItemCompleted(activeItem.id) && (
-                <div className="space-y-2">
-                  <p className="text-[10px] font-display font-bold text-muted-foreground uppercase">Ваш ответ</p>
-                  <RichTextEditor
-                    content=""
-                    onChange={() => {}}
-                    placeholder={activeItem.type === 'write' ? 'Напишите ваш ответ, эссе или конспект...' : 'Опишите вашу демонстрацию...'}
-                    minHeight="150px"
+                {/* Student response field for write-type steps */}
+                {employeeId && ['write', 'demo', 'clay_demo'].includes(activeItem.type) && !isItemCompleted(activeItem.id) && (
+                  <div className="space-y-2">
+                    <p className="text-[10px] font-display font-bold text-muted-foreground uppercase">Ваш ответ</p>
+                    <RichTextEditor
+                      content=""
+                      onChange={() => {}}
+                      placeholder={activeItem.type === 'write' ? 'Напишите ваш ответ, эссе или конспект...' : 'Опишите вашу демонстрацию...'}
+                      minHeight="150px"
+                    />
+                  </div>
+                )}
+
+                {/* Quiz */}
+                {activeItem.type === 'quiz' && activeItem.quizQuestions && activeItem.quizQuestions.length > 0 && !isItemCompleted(activeItem.id) && (
+                  <QuizStep
+                    questions={activeItem.quizQuestions}
+                    onPassed={() => completeMut.mutate(activeItem.id)}
                   />
-                </div>
-              )}
+                )}
 
-              {/* Quiz */}
-              {activeItem.type === 'quiz' && activeItem.quizQuestions && activeItem.quizQuestions.length > 0 && !isItemCompleted(activeItem.id) && (
-                <QuizStep
-                  questions={activeItem.quizQuestions}
-                  onPassed={() => completeMut.mutate(activeItem.id)}
-                />
-              )}
+                {/* Word Clearing button */}
+                {employeeId && (
+                  <button onClick={() => setShowWordClearing(!showWordClearing)}
+                    className="px-4 py-2 border border-border rounded-lg text-xs font-display font-bold text-muted-foreground hover:bg-accent flex items-center gap-1.5">
+                    <HelpCircle size={14} /> {showWordClearing ? 'Скрыть прояснение слов' : 'Не понимаю слово'}
+                  </button>
+                )}
 
-              {/* Word Clearing button */}
-              {employeeId && (
-                <button onClick={() => setShowWordClearing(!showWordClearing)}
-                  className="px-4 py-2 border border-border rounded-lg text-xs font-display font-bold text-muted-foreground hover:bg-accent flex items-center gap-1.5">
-                  <HelpCircle size={14} /> {showWordClearing ? 'Скрыть прояснение слов' : 'Не понимаю слово'}
-                </button>
-              )}
+                {showWordClearing && employeeId && activeItem && (
+                  <WordClearingPanel courseId={courseId} employeeId={employeeId} stepId={activeItem.id} onClose={() => setShowWordClearing(false)} />
+                )}
 
-              {showWordClearing && employeeId && activeItem && (
-                <WordClearingPanel courseId={courseId} employeeId={employeeId} stepId={activeItem.id} onClose={() => setShowWordClearing(false)} />
-              )}
+                {/* Artifact upload */}
+                {employeeId && ['write', 'demo', 'clay_demo', 'drill'].includes(activeItem.type) && (
+                  <StepArtifactUpload courseId={courseId} employeeId={employeeId} stepId={activeItem.id} />
+                )}
 
-              {/* Artifact upload */}
-              {employeeId && ['write', 'demo', 'clay_demo', 'drill'].includes(activeItem.type) && (
-                <StepArtifactUpload courseId={courseId} employeeId={employeeId} stepId={activeItem.id} />
-              )}
-
-              {/* Checkout request */}
-              {employeeId && activeBlocked.blocked && (activeItem.type === 'checkout' || activeItem.needsCheckout) && (
-                (() => {
-                  const req = checkoutRequests?.find(r => r.step_id === activeItem.id);
-                  if (!req) {
-                    return <CheckoutRequestPanel courseId={courseId} employeeId={employeeId} stepId={activeItem.id} stepTitle={activeItem.title} onRequested={() => qc.invalidateQueries({ queryKey: ['checkout-requests'] })} />;
-                  }
-                  if (req.status === 'pending') {
-                    return (
-                      <div className="border border-amber-500/30 bg-amber-500/5 rounded-xl p-4 flex items-center gap-2">
-                        <Lock size={16} className="text-amber-500" />
-                        <p className="text-xs font-display font-bold text-amber-700 dark:text-amber-400">Ожидает проверки супервизором</p>
-                      </div>
-                    );
-                  }
-                  if (req.status === 'rejected') {
-                    return (
-                      <div className="space-y-2">
-                        <div className="border border-destructive/30 bg-destructive/5 rounded-xl p-4">
-                          <p className="text-xs font-display font-bold text-destructive mb-1">Чек-аут не пройден</p>
-                          {(req.result as any)?.notes && <p className="text-xs text-muted-foreground font-body">{(req.result as any).notes}</p>}
+                {/* Checkout request */}
+                {employeeId && activeBlocked.blocked && (activeItem.type === 'checkout' || activeItem.needsCheckout) && (
+                  (() => {
+                    const req = checkoutRequests?.find(r => r.step_id === activeItem.id);
+                    if (!req) {
+                      return <CheckoutRequestPanel courseId={courseId} employeeId={employeeId} stepId={activeItem.id} stepTitle={activeItem.title} onRequested={() => qc.invalidateQueries({ queryKey: ['checkout-requests'] })} />;
+                    }
+                    if (req.status === 'pending') {
+                      return (
+                        <div className="border border-amber-500/30 bg-amber-500/5 rounded-xl p-4 flex items-center gap-2">
+                          <Lock size={16} className="text-amber-500" />
+                          <p className="text-xs font-display font-bold text-amber-700 dark:text-amber-400">Ожидает проверки супервизором</p>
                         </div>
-                        <CheckoutRequestPanel courseId={courseId} employeeId={employeeId} stepId={activeItem.id} stepTitle={activeItem.title} onRequested={() => qc.invalidateQueries({ queryKey: ['checkout-requests'] })} />
-                      </div>
-                    );
-                  }
-                  return null;
-                })()
-              )}
+                      );
+                    }
+                    if (req.status === 'rejected') {
+                      return (
+                        <div className="space-y-2">
+                          <div className="border border-destructive/30 bg-destructive/5 rounded-xl p-4">
+                            <p className="text-xs font-display font-bold text-destructive mb-1">Чек-аут не пройден</p>
+                            {(req.result as any)?.notes && <p className="text-xs text-muted-foreground font-body">{(req.result as any).notes}</p>}
+                          </div>
+                          <CheckoutRequestPanel courseId={courseId} employeeId={employeeId} stepId={activeItem.id} stepTitle={activeItem.title} onRequested={() => qc.invalidateQueries({ queryKey: ['checkout-requests'] })} />
+                        </div>
+                      );
+                    }
+                    return null;
+                  })()
+                )}
 
-              {/* Complete button */}
-              {employeeId && !isItemCompleted(activeItem.id) && !activeBlocked.blocked && activeItem.type !== 'quiz' && (
-                <button
-                  onClick={() => completeMut.mutate(activeItem.id)}
-                  disabled={completeMut.isPending}
-                  className="px-6 py-3 bg-primary text-primary-foreground rounded-xl font-display font-bold text-sm flex items-center gap-2 hover:bg-primary/90 transition-all disabled:opacity-50"
-                >
-                  <Check size={16} /> Выполнено ✓
-                </button>
-              )}
+                {/* Complete button */}
+                {employeeId && !isItemCompleted(activeItem.id) && !activeBlocked.blocked && activeItem.type !== 'quiz' && (
+                  <button
+                    onClick={() => completeMut.mutate(activeItem.id)}
+                    disabled={completeMut.isPending}
+                    className="w-full px-6 py-3 bg-primary text-primary-foreground rounded-xl font-display font-bold text-sm flex items-center justify-center gap-2 hover:bg-primary/90 transition-all disabled:opacity-50"
+                  >
+                    <Check size={16} /> Выполнено ✓
+                  </button>
+                )}
 
-              {isItemCompleted(activeItem.id) && (
-                <div className="flex items-center gap-2 text-primary text-sm font-display font-bold">
-                  <Check size={16} /> Пункт выполнен
-                </div>
-              )}
-              {/* Step comments */}
-              {employeeId && activeItem && (
-                <TrainingChat courseId={courseId} employeeId={employeeId} stepId={activeItem.id} mode="step_comment" />
-              )}
-            </div>
-          ) : (
-            <div className="text-center py-12">
-              <p className="text-muted-foreground text-sm font-body">Контрольный лист пуст</p>
-            </div>
-          )}
-        </div>
+                {isItemCompleted(activeItem.id) && (
+                  <div className="flex items-center gap-2 text-primary text-sm font-display font-bold p-3 bg-primary/5 rounded-xl">
+                    <Check size={16} /> Пункт выполнен
+                  </div>
+                )}
+
+                {/* Step comments */}
+                {employeeId && activeItem && (
+                  <TrainingChat courseId={courseId} employeeId={employeeId} stepId={activeItem.id} mode="step_comment" />
+                )}
+              </div>
+            </ResizablePanel>
+          </ResizablePanelGroup>
+        ) : (
+          <div className="text-center py-12 bg-card">
+            <p className="text-muted-foreground text-sm font-body">Контрольный лист пуст</p>
+          </div>
+        )}
       </div>
 
       {/* Floating chat with curator */}
