@@ -1,10 +1,11 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { TrendingUp, LayoutDashboard, List, Layers, ChevronUp, ChevronDown, Award, Download, Upload, Edit2 } from 'lucide-react';
 import { useStatisticDefinitions, useStatisticValues, useCreateStatValue } from '@/hooks/useStatistics';
 import { useDepartments, DBDepartment } from '@/hooks/useDepartments';
 import { StatCard } from '@/components/statistics/StatCard';
 import { PERIODS, PeriodType, getFilteredValues, analyzeTrend, generateMockHistory } from '@/utils/statistics';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { toast } from 'sonner';
 
 interface StatisticsPageProps {
   selectedDeptId: string | null;
