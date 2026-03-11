@@ -42,7 +42,7 @@ export function SupervisorStepComments({ courseId, employeeId, stepId, stepTitle
 
   const addMut = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from('supervisor_step_comments').insert({
+      const { error } = await (supabase as any).from('supervisor_step_comments').insert({
         course_id: courseId, employee_id: employeeId, step_id: stepId,
         comment: text, supervisor_user_id: user?.id,
       });
