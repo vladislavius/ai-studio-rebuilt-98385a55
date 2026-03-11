@@ -83,7 +83,7 @@ const CARD_PALETTE = [
 
 // ─── Main component ────────────────────────────────────────────────────────────
 export function AcademyPage() {
-  const { isAdmin, isSupervisor, isAuthor, user } = useAuth();
+  const { isAdmin, isSupervisor, isAuthor, user, roles } = useAuth();
   const { t } = useLabels();
   const qc = useQueryClient();
   const isManager = isAdmin || isAuthor;
@@ -165,7 +165,28 @@ export function AcademyPage() {
   const openCourseBuilder = (id: string) => { setSelectedCourseId(id); setView('course-builder'); };
   const backToMain        = () => { setView('main'); setSelectedCourseId(null); };
 
-  // ── Full-page views ───────────────────────────────────────────────────────
+  // ── Sidebar nav items filtered by role (must be before early returns) ────
+  const navItems = NAV.filter(item =>
+    (isAdmin && item.forAdmin) ||
+    (isAuthor && item.forAuthor) ||
+    (isSupervisor && item.forSupervisor)
+  );
+  const navGroups = [...new Set(navItems.map(i => i.group))];
+
+  // ── Filtered courses (useMemo must be before early returns) ──────────────
+  const filteredCourses = useMemo(() => {
+    return (courses ?? []).filter(c => {
+      const matchSearch = !search || c.title.toLowerCase().includes(search.toLowerCase());
+      const matchStatus =
+        statusFilter === 'all' ||
+        (statusFilter === 'published' && c.is_published) ||
+        (statusFilter === 'draft' && !c.is_published) ||
+        (statusFilter === 'hst' && c.is_hst_course);
+      return matchSearch && matchStatus;
+    });
+  }, [courses, search, statusFilter]);
+
+  // ── Full-page views (after all hooks) ────────────────────────────────────
   if (view === 'course-editor' && selectedCourseId) {
     return <CourseChecksheet courseId={selectedCourseId} onBack={backToMain} />;
   }
@@ -196,27 +217,6 @@ export function AcademyPage() {
       />
     );
   }
-
-  // ── Sidebar nav items filtered by role ───────────────────────────────────
-  const navItems = NAV.filter(item =>
-    (isAdmin && item.forAdmin) ||
-    (isAuthor && item.forAuthor) ||
-    (isSupervisor && item.forSupervisor)
-  );
-  const navGroups = [...new Set(navItems.map(i => i.group))];
-
-  // ── Filtered courses ──────────────────────────────────────────────────────
-  const filteredCourses = useMemo(() => {
-    return (courses ?? []).filter(c => {
-      const matchSearch = !search || c.title.toLowerCase().includes(search.toLowerCase());
-      const matchStatus =
-        statusFilter === 'all' ||
-        (statusFilter === 'published' && c.is_published) ||
-        (statusFilter === 'draft' && !c.is_published) ||
-        (statusFilter === 'hst' && c.is_hst_course);
-      return matchSearch && matchStatus;
-    });
-  }, [courses, search, statusFilter]);
 
   // ─────────────────────────────────────────────────────────────────────────
   const SidebarContent = () => (

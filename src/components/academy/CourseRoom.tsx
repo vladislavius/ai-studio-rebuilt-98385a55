@@ -75,11 +75,12 @@ export function CourseRoom({ courseId, employeeId, userRoles, onBack }: CourseRo
     },
   });
 
-  // Parse steps from JSONB
+  // Parse steps from JSONB — remap `id` → `step_id` (JSONB key vs EnrichedStep field)
   const steps: EnrichedStep[] = useMemo(() => {
     if (!course?.sections || !Array.isArray(course.sections)) return [];
-    return (course.sections as unknown as EnrichedStep[])
-      .sort((a, b) => a.order - b.order);
+    return (course.sections as any[])
+      .map(s => ({ ...s, step_id: s.id ?? s.step_id }))
+      .sort((a, b) => a.order - b.order) as EnrichedStep[];
   }, [course]);
 
   // ── Load step progress ────────────────────────────────────────────────────────
