@@ -40,12 +40,12 @@ export function TwinningManager() {
   const { data: sessions, isLoading } = useQuery({
     queryKey: ['twinning-sessions'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('twinning_sessions')
         .select('*')
         .order('created_at', { ascending: false });
       if (error) throw error;
-      return data as TwinningSession[];
+      return (data ?? []) as TwinningSession[];
     },
   });
 
