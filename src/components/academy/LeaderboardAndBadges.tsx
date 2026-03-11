@@ -49,7 +49,7 @@ export function useBadgeAutoAward(employeeId: string | undefined) {
   useEffect(() => {
     if (!progress || !badges || !earned || !employeeId) return;
 
-    const earnedSet = new Set(earned.map(e => `${e.badge_id}:${e.course_id}`));
+    const earnedSet = new Set((earned as any[]).map((e: any) => `${e.badge_id}:${e.course_id}`));
     const completedCourses = progress.filter(p => p.completed_at);
     const certifiedCourses = progress.filter(p => p.certified);
 
