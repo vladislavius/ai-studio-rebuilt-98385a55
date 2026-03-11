@@ -40,8 +40,8 @@ export function useBadgeAutoAward(employeeId: string | undefined) {
 
   const awardMut = useMutation({
     mutationFn: async ({ badgeId, courseId }: { badgeId: string; courseId: string | null }) => {
-      const { error } = await supabase.from('student_badges').insert({ employee_id: employeeId, badge_id: badgeId, course_id: courseId });
-      if (error && !error.message.includes('duplicate')) throw error;
+      const { error } = await (supabase as any).from('student_badges').insert({ employee_id: employeeId, badge_id: badgeId, course_id: courseId });
+      if (error && !error.message?.includes('duplicate')) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['student-badges', employeeId] }),
   });
