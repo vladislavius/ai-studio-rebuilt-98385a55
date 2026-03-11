@@ -32,11 +32,11 @@ export function SupervisorStepComments({ courseId, employeeId, stepId, stepTitle
   const { data: comments = [] } = useQuery({
     queryKey: ['step-comments', courseId, employeeId, stepId],
     queryFn: async () => {
-      const { data, error } = await supabase.from('supervisor_step_comments').select('*')
+      const { data, error } = await (supabase as any).from('supervisor_step_comments').select('*')
         .eq('course_id', courseId).eq('employee_id', employeeId).eq('step_id', stepId)
         .order('created_at', { ascending: true });
       if (error) throw error;
-      return data as StepComment[];
+      return (data ?? []) as StepComment[];
     },
   });
 
