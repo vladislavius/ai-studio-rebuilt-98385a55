@@ -151,7 +151,7 @@ export function ExtraAssignmentsManager() {
 
   const createMut = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from('extra_assignments').insert({
+      const { error } = await (supabase as any).from('extra_assignments').insert({
         employee_id: form.employee_id,
         course_id: form.course_id || null,
         title: form.title,
