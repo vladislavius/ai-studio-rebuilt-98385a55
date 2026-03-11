@@ -500,7 +500,7 @@ export function CourseChecksheet({ courseId, onBack }: Props) {
   };
 
   const handleSaveAsTemplate = async () => {
-    const { error } = await supabase.from('checksheet_templates').insert({ title, description, sections: items.map((it, i) => ({ ...it, order: i + 1 })) });
+    const { error } = await (supabase as any).from('checksheet_templates').insert({ title, description, sections: items.map((it, i) => ({ ...it, order: i + 1 })) });
     if (error) toast.error(error.message); else { toast.success('Шаблон сохранён'); setShowTemplates(false); }
   };
 
