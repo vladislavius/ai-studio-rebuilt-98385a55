@@ -235,7 +235,7 @@ export function StudentPortal({ employeeId, employeeName, onStudyCourse }: Props
         .from('course_progress')
         .select('*, courses(title, description, sections, duration_hours, is_hst_course)')
         .eq('employee_id', employeeId)
-        .order('created_at', { ascending: false });
+        .order('started_at', { ascending: false });
       if (error) throw error;
       return (data ?? []) as ProgressRow[];
     },
