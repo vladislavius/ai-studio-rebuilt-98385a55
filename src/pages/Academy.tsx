@@ -15,6 +15,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { CourseChecksheet } from '@/components/academy/CourseChecksheet';
 import { CourseStudyView } from '@/components/academy/CourseStudyView';
+import { CourseRoom } from '@/components/academy/CourseRoom';
+import { CourseBuilder } from '@/components/academy/CourseBuilder';
 import { ProgressDashboard } from '@/components/academy/ProgressDashboard';
 import { AcademyDocsPage } from '@/components/academy/AcademyDocsPage';
 import { GlossaryManager } from '@/components/academy/GlossaryManager';
@@ -34,7 +36,7 @@ type Section =
   | 'checkouts' | 'barriers' | 'twinning' | 'supervisors'
   | 'students' | 'assignments' | 'leaderboard' | 'docs';
 
-type View = 'main' | 'course-editor' | 'course-study';
+type View = 'main' | 'course-editor' | 'course-study' | 'course-room' | 'course-builder';
 type StatusFilter = 'all' | 'published' | 'draft' | 'hst';
 
 interface NavItem {
@@ -155,16 +157,33 @@ export function AcademyPage() {
   });
 
   // ── Navigation ────────────────────────────────────────────────────────────
-  const openCourseEditor = (id: string) => { setSelectedCourseId(id); setView('course-editor'); };
-  const openCourseStudy  = (id: string) => { setSelectedCourseId(id); setView('course-study'); };
-  const backToMain       = () => { setView('main'); setSelectedCourseId(null); };
+  const openCourseEditor  = (id: string) => { setSelectedCourseId(id); setView('course-editor'); };
+  const openCourseStudy   = (id: string) => { setSelectedCourseId(id); setView('course-study'); };
+  // New: strict ТО ЛРХ sequential study mode
+  const openCourseRoom    = (id: string) => { setSelectedCourseId(id); setView('course-room'); };
+  // New: block-based course builder
+  const openCourseBuilder = (id: string) => { setSelectedCourseId(id); setView('course-builder'); };
+  const backToMain        = () => { setView('main'); setSelectedCourseId(null); };
 
   // ── Full-page views ───────────────────────────────────────────────────────
   if (view === 'course-editor' && selectedCourseId) {
     return <CourseChecksheet courseId={selectedCourseId} onBack={backToMain} />;
   }
+  if (view === 'course-builder' && selectedCourseId) {
+    return <CourseBuilder courseId={selectedCourseId} onBack={backToMain} />;
+  }
   if (view === 'course-study' && selectedCourseId) {
     return <CourseStudyView courseId={selectedCourseId} onBack={backToMain} employeeId={myEmployee?.id} />;
+  }
+  if (view === 'course-room' && selectedCourseId && myEmployee?.id) {
+    return (
+      <CourseRoom
+        courseId={selectedCourseId}
+        employeeId={myEmployee.id}
+        userRoles={roles}
+        onBack={backToMain}
+      />
+    );
   }
 
   // ── Student portal ────────────────────────────────────────────────────────
@@ -173,7 +192,7 @@ export function AcademyPage() {
       <StudentPortal
         employeeId={myEmployee?.id ?? null}
         employeeName={(myEmployee as any)?.full_name ?? null}
-        onStudyCourse={openCourseStudy}
+        onStudyCourse={myEmployee?.id ? openCourseRoom : openCourseStudy}
       />
     );
   }
@@ -333,6 +352,8 @@ export function AcademyPage() {
               onTogglePublish={(id, published) => togglePublish.mutate({ id, published })}
               onEditCourse={openCourseEditor}
               onStudyCourse={openCourseStudy}
+              onStudyHST={openCourseRoom}
+              onEditBuilder={openCourseBuilder}
             />
           )}
           {currentSection === 'progress'    && <ProgressDashboard />}
@@ -372,6 +393,8 @@ interface CoursesSectionProps {
   onTogglePublish: (id: string, published: boolean) => void;
   onEditCourse: (id: string) => void;
   onStudyCourse: (id: string) => void;
+  onStudyHST: (id: string) => void;
+  onEditBuilder: (id: string) => void;
 }
 
 function CoursesSection({
@@ -379,6 +402,7 @@ function CoursesSection({
   showCreateForm, setShowCreateForm, form, setForm,
   search, setSearch, statusFilter, setStatusFilter,
   isLoading, onCreateCourse, onDeleteCourse, onTogglePublish, onEditCourse, onStudyCourse,
+  onStudyHST, onEditBuilder,
 }: CoursesSectionProps) {
   const published = courses.filter(c => c.is_published).length;
   const drafts = courses.filter(c => !c.is_published).length;
@@ -531,6 +555,8 @@ function CoursesSection({
               onStudy={onStudyCourse}
               onDelete={onDeleteCourse}
               onTogglePublish={onTogglePublish}
+              onStudyHST={onStudyHST}
+              onEditBuilder={onEditBuilder}
             />
           ))}
         </div>
@@ -549,9 +575,11 @@ interface CourseCardProps {
   onStudy: (id: string) => void;
   onDelete: (id: string) => void;
   onTogglePublish: (id: string, published: boolean) => void;
+  onStudyHST?: (id: string) => void;   // strict ТО ЛРХ sequential mode
+  onEditBuilder?: (id: string) => void; // block-based course builder
 }
 
-function CourseCard({ course, index, isManager, isAdmin, onEdit, onStudy, onDelete, onTogglePublish }: CourseCardProps) {
+function CourseCard({ course, index, isManager, isAdmin, onEdit, onStudy, onDelete, onTogglePublish, onStudyHST, onEditBuilder }: CourseCardProps) {
   const pal = CARD_PALETTE[index % CARD_PALETTE.length];
 
   // Count total steps across all sections
@@ -643,6 +671,24 @@ function CourseCard({ course, index, isManager, isAdmin, onEdit, onStudy, onDele
           >
             <BookOpen size={12} />
           </button>
+          {onStudyHST && (
+            <button
+              onClick={e => { e.stopPropagation(); onStudyHST(course.id); }}
+              className="p-1.5 rounded-lg bg-background/80 backdrop-blur-sm border border-border hover:bg-amber-500/10 text-muted-foreground hover:text-amber-600"
+              title="Режим ТО ЛРХ (строгая прогрессия)"
+            >
+              <GraduationCap size={12} />
+            </button>
+          )}
+          {onEditBuilder && (
+            <button
+              onClick={e => { e.stopPropagation(); onEditBuilder(course.id); }}
+              className="p-1.5 rounded-lg bg-background/80 backdrop-blur-sm border border-border hover:bg-primary/10 text-muted-foreground hover:text-primary"
+              title="Блочный конструктор"
+            >
+              <Layers size={12} />
+            </button>
+          )}
           {isAdmin && (
             <button
               onClick={e => { e.stopPropagation(); if (confirm('Удалить этот курс?')) onDelete(course.id); }}
