@@ -125,9 +125,9 @@ export function ExtraAssignmentsManager() {
   const { data: assignments, isLoading } = useQuery({
     queryKey: ['extra-assignments'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('extra_assignments').select('*').order('created_at', { ascending: false });
+      const { data, error } = await (supabase as any).from('extra_assignments').select('*').order('created_at', { ascending: false });
       if (error) throw error;
-      return data as ExtraAssignment[];
+      return (data ?? []) as ExtraAssignment[];
     },
   });
 
