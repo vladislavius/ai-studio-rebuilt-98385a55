@@ -745,7 +745,7 @@ export function CourseChecksheet({ courseId, onBack }: Props) {
             if (items.length > 0 && items.some(it => it.title.trim())) {
               if (!confirm('Существующие пункты будут заменены. Продолжить?')) return;
             }
-            setItems(generated);
+            setItems(generated as ChecksheetItem[]);
             if (generated.length > 0) setSelectedId(generated[0].id);
           }}
           onClose={() => setShowGenerate(false)}

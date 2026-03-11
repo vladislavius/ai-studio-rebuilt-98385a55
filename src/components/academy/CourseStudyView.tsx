@@ -116,7 +116,7 @@ export function CourseStudyView({ courseId, onBack, employeeId }: Props) {
     queryKey: ['my-twinning', courseId, employeeId],
     queryFn: async () => {
       if (!employeeId) return [];
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('twinning_sessions')
         .select('id, step_id, status, scheduled_at, notes, employee_a_id, employee_b_id')
         .eq('course_id', courseId)
@@ -124,7 +124,7 @@ export function CourseStudyView({ courseId, onBack, employeeId }: Props) {
         .in('status', ['pending', 'scheduled'])
         .order('scheduled_at', { ascending: true });
       if (error) throw error;
-      return data as { id: string; step_id: string; status: string; scheduled_at: string | null; notes: string | null; employee_a_id: string; employee_b_id: string }[];
+      return (data ?? []) as { id: string; step_id: string; status: string; scheduled_at: string | null; notes: string | null; employee_a_id: string; employee_b_id: string }[];
     },
     enabled: !!employeeId,
   });
