@@ -96,7 +96,7 @@ export function TwinningManager() {
       const empIds = (enrolled ?? []).map(r => r.employee_id);
       if (empIds.length < 2) throw new Error('Нужно минимум 2 студента на курсе');
       // find already paired employees for this course
-      const { data: existing } = await supabase.from('twinning_sessions').select('employee_a_id, employee_b_id')
+      const { data: existing } = await (supabase as any).from('twinning_sessions').select('employee_a_id, employee_b_id')
         .eq('course_id', courseId).in('status', ['pending', 'scheduled']);
       const paired = new Set<string>();
       (existing ?? []).forEach(s => { paired.add(s.employee_a_id); paired.add(s.employee_b_id); });
