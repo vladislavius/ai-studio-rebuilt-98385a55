@@ -111,7 +111,7 @@ export function TwinningManager() {
       for (let i = 0; i + 1 < unpaired.length; i += 2) {
         pairs.push({ employee_a_id: unpaired[i], employee_b_id: unpaired[i + 1], course_id: courseId, step_id: 'auto', supervisor_user_id: user?.id });
       }
-      const { error } = await supabase.from('twinning_sessions').insert(pairs);
+      const { error } = await (supabase as any).from('twinning_sessions').insert(pairs);
       if (error) throw error;
       return pairs.length;
     },
