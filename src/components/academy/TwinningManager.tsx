@@ -126,7 +126,7 @@ export function TwinningManager() {
   // Submit feedback for a completed session
   const feedbackMut = useMutation({
     mutationFn: async ({ sessionId, employeeId }: { sessionId: string; employeeId: string }) => {
-      const { error } = await supabase.from('twinning_feedback').upsert({
+      const { error } = await (supabase as any).from('twinning_feedback').upsert({
         session_id: sessionId, employee_id: employeeId,
         rating: feedbackRating, notes: feedbackNotes || null,
       }, { onConflict: 'session_id,employee_id' });

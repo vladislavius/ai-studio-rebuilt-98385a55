@@ -769,7 +769,7 @@ function TemplatesPanel({ onClose, onSaveAsTemplate, onLoadTemplate }: {
 
   const deleteTpl = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from('checksheet_templates').delete().eq('id', id);
+      const { error } = await (supabase as any).from('checksheet_templates').delete().eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => { toast.success('Шаблон удалён'); refetch(); },

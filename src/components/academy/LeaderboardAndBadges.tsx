@@ -136,8 +136,8 @@ export function Leaderboard() {
   const { data: studentBadges } = useQuery({
     queryKey: ['all-student-badges'],
     queryFn: async () => {
-      const { data } = await supabase.from('student_badges').select('employee_id');
-      return data ?? [];
+      const { data } = await (supabase as any).from('student_badges').select('employee_id');
+      return (data ?? []) as { employee_id: string }[];
     },
   });
 

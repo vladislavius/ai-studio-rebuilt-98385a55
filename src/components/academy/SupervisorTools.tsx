@@ -181,7 +181,7 @@ export function ExtraAssignmentsManager() {
 
   const deleteMut = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from('extra_assignments').delete().eq('id', id);
+      const { error } = await (supabase as any).from('extra_assignments').delete().eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['extra-assignments'] }),
