@@ -32,8 +32,8 @@ export function useBadgeAutoAward(employeeId: string | undefined) {
     queryKey: ['student-badges', employeeId],
     queryFn: async () => {
       if (!employeeId) return [];
-      const { data } = await supabase.from('student_badges').select('badge_id, course_id').eq('employee_id', employeeId);
-      return data ?? [];
+      const { data } = await (supabase as any).from('student_badges').select('badge_id, course_id').eq('employee_id', employeeId);
+      return (data ?? []) as { badge_id: string; course_id: string | null }[];
     },
     enabled: !!employeeId,
   });
