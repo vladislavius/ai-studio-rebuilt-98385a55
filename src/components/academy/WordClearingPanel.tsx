@@ -113,7 +113,7 @@ export function WordClearingPanel({ courseId, employeeId, stepId, onClose, onWor
           <BookOpen size={14} className="text-primary" />
           <span className="text-xs font-display font-bold text-foreground">Прояснение слов</span>
           {unclearedCount > 0 && (
-            <span className="px-1.5 py-0.5 bg-destructive/10 text-destructive rounded text-[10px] font-bold">{unclearedCount} неясных</span>
+            <span className="px-1.5 py-0.5 bg-destructive/10 text-destructive rounded text-[10px] font-bold">{unclearedCount} непонятых</span>
           )}
         </div>
         <button onClick={onClose} className="text-xs text-muted-foreground hover:text-foreground">Закрыть</button>
@@ -122,7 +122,7 @@ export function WordClearingPanel({ courseId, employeeId, stepId, onClose, onWor
       <div className="p-3 space-y-3">
         {/* Add unclear word */}
         <div className="flex gap-2">
-          <Input value={customTerm} onChange={e => setCustomTerm(e.target.value)} placeholder="Введите неясное слово..." className="bg-background h-8 text-xs flex-1" />
+          <Input value={customTerm} onChange={e => setCustomTerm(e.target.value)} placeholder="Введите непонятое слово..." className="bg-background h-8 text-xs flex-1" />
           <button onClick={() => { if (customTerm.trim()) markUnclearMut.mutate(customTerm.trim()); }}
             disabled={!customTerm.trim()} className="px-2.5 py-1 bg-primary text-primary-foreground rounded-lg text-xs font-bold disabled:opacity-50 flex items-center gap-1">
             <Plus size={12} /> Добавить
@@ -132,7 +132,7 @@ export function WordClearingPanel({ courseId, employeeId, stepId, onClose, onWor
         {/* Student's unclear words for this step */}
         {logs.length > 0 && (
           <div className="space-y-1.5">
-            <p className="text-[10px] font-display font-bold text-muted-foreground uppercase">Мои неясные слова</p>
+            <p className="text-[10px] font-display font-bold text-muted-foreground uppercase">Мои непонятые слова</p>
             {logs.map(log => {
               const glossaryMatch = glossary.find(g => g.id === log.glossary_term_id);
               const isExpanded = expandedLog === log.id;

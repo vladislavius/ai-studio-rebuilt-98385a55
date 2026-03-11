@@ -20,7 +20,7 @@ export function JitsiVideoCall({ courseId, employeeId, courseName }: Props) {
     return (
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-20 right-20 z-50 w-12 h-12 bg-accent-foreground text-background rounded-full shadow-lg flex items-center justify-center hover:opacity-90 transition-all"
+        className="fixed bottom-24 md:bottom-8 right-20 z-50 w-12 h-12 bg-accent-foreground text-background rounded-full shadow-lg flex items-center justify-center hover:opacity-90 transition-all"
         title="Видеозвонок с куратором"
       >
         <Video size={20} />
@@ -29,7 +29,7 @@ export function JitsiVideoCall({ courseId, employeeId, courseName }: Props) {
   }
 
   return (
-    <div className={`fixed z-50 ${isFullscreen ? 'inset-0' : 'bottom-20 right-4 w-[400px] h-[320px]'} bg-card border border-border rounded-xl shadow-2xl flex flex-col overflow-hidden transition-all duration-300`}>
+    <div className={`fixed z-50 ${isFullscreen ? 'inset-0' : 'bottom-24 md:bottom-8 right-4 w-[400px] h-[320px]'} bg-card border border-border rounded-xl shadow-2xl flex flex-col overflow-hidden transition-all duration-300`}>
       <div className="flex items-center justify-between p-2 border-b border-border bg-muted/30">
         <div className="flex items-center gap-2">
           <Video size={14} className="text-emerald-500" />

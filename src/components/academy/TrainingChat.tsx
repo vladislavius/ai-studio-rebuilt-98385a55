@@ -163,7 +163,7 @@ export function TrainingChat({ courseId, employeeId, stepId, mode }: Props) {
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="fixed bottom-20 right-4 z-50 w-12 h-12 bg-primary text-primary-foreground rounded-full shadow-lg flex items-center justify-center hover:bg-primary/90 transition-all"
+          className="fixed bottom-24 md:bottom-8 right-4 z-50 w-12 h-12 bg-primary text-primary-foreground rounded-full shadow-lg flex items-center justify-center hover:bg-primary/90 transition-all"
         >
           <MessageCircle size={20} />
           {messages.length > 0 && (
@@ -176,7 +176,7 @@ export function TrainingChat({ courseId, employeeId, stepId, mode }: Props) {
 
       {/* Chat panel */}
       {isOpen && (
-        <div className="fixed bottom-20 right-4 z-50 w-80 max-h-[60vh] bg-card border border-border rounded-xl shadow-2xl flex flex-col overflow-hidden">
+        <div className="fixed bottom-24 md:bottom-8 right-4 z-50 w-80 max-h-[60vh] bg-card border border-border rounded-xl shadow-2xl flex flex-col overflow-hidden">
           <div className="flex items-center justify-between p-3 border-b border-border bg-muted/30">
             <div className="flex items-center gap-2">
               <MessageCircle size={14} className="text-primary" />

@@ -145,17 +145,18 @@ export function AppSidebar({
             <p className="text-2xl font-display font-bold text-foreground">{employeeCount}</p>
           </div>
         )}
-        <div className="flex gap-2">
+        <div className={`flex gap-2 ${isSidebarCollapsed ? 'flex-col' : 'flex-row'}`}>
           <button
             onClick={toggleTheme}
-            className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-sidebar-border text-sidebar-foreground hover:text-sidebar-accent-foreground hover:bg-sidebar-accent font-display font-medium transition-colors text-sm ${isSidebarCollapsed ? 'flex-1 px-0' : ''}`}
+            className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl border border-sidebar-border text-sidebar-foreground hover:text-sidebar-accent-foreground hover:bg-sidebar-accent font-display font-medium transition-colors text-sm"
             title={theme === 'dark' ? 'Светлая тема' : 'Тёмная тема'}
           >
             {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+            {!isSidebarCollapsed && <span>{theme === 'dark' ? 'Светлая' : 'Тёмная'}</span>}
           </button>
           <button
             onClick={onLogout}
-            className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-destructive/30 text-destructive hover:bg-destructive/10 font-display font-medium transition-colors text-sm ${isSidebarCollapsed ? 'flex-1 px-0' : 'flex-1'}`}
+            className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl border border-destructive/30 text-destructive hover:bg-destructive/10 font-display font-medium transition-colors text-sm"
             title={t('nav.logout')}
           >
             <LogOut size={18} />

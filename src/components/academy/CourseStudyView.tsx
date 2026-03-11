@@ -25,14 +25,14 @@ interface ChecksheetItem {
   critical?: boolean;
   needsCheckout?: boolean;
   starred?: boolean;
-  quizQuestions?: { question: string; options: string[]; correctIndex: number }[];
+  quizQuestions?: { question: string; options: string[]; correctIndex: number; correctIndices?: number[]; multiSelect?: boolean }[];
 }
 
 const TYPE_META: Record<string, { label: string; icon: typeof BookOpen; color: string; border?: string }> = {
   read:          { label: 'Прочитать',       icon: BookOpen,      color: 'text-blue-500',    border: 'border-l-blue-400' },
   write:         { label: 'Написать',        icon: PenLine,       color: 'text-amber-500',   border: 'border-l-amber-400' },
   demo:          { label: 'Демо',            icon: Eye,           color: 'text-emerald-500', border: 'border-l-emerald-400' },
-  clay_demo:     { label: 'Глиняное демо',   icon: Sparkles,      color: 'text-teal-500',    border: 'border-l-teal-400' },
+  clay_demo:     { label: 'Пластилиновое демо',   icon: Sparkles,      color: 'text-teal-500',    border: 'border-l-teal-400' },
   drill:         { label: 'Упражнение',      icon: Dumbbell,      color: 'text-purple-500',  border: 'border-l-purple-400' },
   checkout:      { label: 'Чек-аут',         icon: ClipboardCheck, color: 'text-rose-500',   border: 'border-l-rose-400' },
   word_clearing: { label: 'Прояснение слов', icon: Search,        color: 'text-cyan-500',    border: 'border-l-cyan-400' },
@@ -55,6 +55,7 @@ export function CourseStudyView({ courseId, onBack, employeeId }: Props) {
   const [studentAnswers, setStudentAnswers] = useState<Record<string, string>>({});
   const [answerSaving, setAnswerSaving] = useState(false);
   const [stepHasArtifact, setStepHasArtifact] = useState(false);
+  const [starRatings, setStarRatings] = useState<Record<string, number>>({});
 
   const { data: course } = useQuery({
     queryKey: ['course', courseId],
@@ -176,12 +177,14 @@ export function CourseStudyView({ courseId, onBack, employeeId }: Props) {
     }
   }, [progressRecord, items.length]);
 
+  // NOTE: activeItem is declared below — use activeIdx as dependency to avoid TDZ
   useEffect(() => {
-    if (activeItem?.type === 'word_clearing') {
+    const item = items[activeIdx];
+    if (item?.type === 'word_clearing') {
       setShowWordClearing(true);
     }
     setStepHasArtifact(false);
-  }, [activeItem?.id]);
+  }, [activeIdx, items]);
 
   // Save student answer with debounce
   const saveAnswer = async (stepId: string, html: string) => {
@@ -275,7 +278,7 @@ export function CourseStudyView({ courseId, onBack, employeeId }: Props) {
     }
     if (item.type === 'word_clearing' && employeeId) {
       const stepLogs = (allWordLogs ?? []).filter(l => l.step_id === item.id);
-      if (stepLogs.length === 0) return { blocked: true, reason: 'Добавьте неясные слова и прояните их' };
+      if (stepLogs.length === 0) return { blocked: true, reason: 'Добавьте непонятые слова и проясните их' };
       const uncleared = stepLogs.filter(l => !l.cleared);
       if (uncleared.length > 0) return { blocked: true, reason: `Осталось прояснить слов: ${uncleared.length}` };
     }
@@ -450,6 +453,41 @@ export function CourseStudyView({ courseId, onBack, employeeId }: Props) {
                   />
                 )}
 
+                {/* Star rating widget */}
+                {employeeId && activeItem.type === 'starrate' && !isItemCompleted(activeItem.id) && (
+                  <div className="space-y-3">
+                    <p className="text-[10px] font-display font-bold text-muted-foreground uppercase">Ваша оценка</p>
+                    <div className="flex items-center gap-2">
+                      {[1, 2, 3, 4, 5].map(n => (
+                        <button
+                          key={n}
+                          onClick={() => setStarRatings(prev => ({ ...prev, [activeItem.id]: n }))}
+                          className="transition-transform hover:scale-110"
+                        >
+                          <Star
+                            size={28}
+                            className={n <= (starRatings[activeItem.id] ?? 0)
+                              ? 'text-amber-400 fill-amber-400'
+                              : 'text-muted-foreground/30'}
+                          />
+                        </button>
+                      ))}
+                      {starRatings[activeItem.id] && (
+                        <span className="text-xs text-muted-foreground font-body ml-1">
+                          {starRatings[activeItem.id]} / 5
+                        </span>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => completeMut.mutate(activeItem.id)}
+                      disabled={!starRatings[activeItem.id] || completeMut.isPending}
+                      className="w-full px-6 py-3 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-xl font-display font-bold text-sm flex items-center justify-center gap-2 hover:opacity-90 hover:scale-[1.01] active:scale-[0.99] transition-all shadow-md shadow-amber-500/20 disabled:opacity-50 disabled:cursor-not-allowed disabled:scale-100 disabled:shadow-none"
+                    >
+                      <Star size={16} /> Отправить оценку
+                    </button>
+                  </div>
+                )}
+
                 {/* Glossary hints for word_clearing steps */}
                 {activeItem.type === 'word_clearing' && courseGlossary && courseGlossary.length > 0 && (
                   <div className="bg-cyan-500/5 border border-cyan-500/20 rounded-xl p-3 space-y-2">
@@ -548,7 +586,7 @@ export function CourseStudyView({ courseId, onBack, employeeId }: Props) {
                 )}
 
                 {/* Complete button */}
-                {employeeId && !isItemCompleted(activeItem.id) && !activeBlocked.blocked && activeItem.type !== 'quiz' && (() => {
+                {employeeId && !isItemCompleted(activeItem.id) && !activeBlocked.blocked && activeItem.type !== 'quiz' && activeItem.type !== 'starrate' && (() => {
                   const needsArtifact = ['demo', 'clay_demo'].includes(activeItem.type) && !stepHasArtifact;
                   return (
                     <div className="space-y-2">

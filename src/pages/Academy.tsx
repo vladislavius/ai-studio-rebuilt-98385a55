@@ -22,6 +22,7 @@ import { SupervisorDashboard } from '@/components/academy/SupervisorDashboard';
 import { TwinningManager } from '@/components/academy/TwinningManager';
 import { Leaderboard } from '@/components/academy/LeaderboardAndBadges';
 import { ExtraAssignmentsManager } from '@/components/academy/SupervisorTools';
+import { StudentPortal } from '@/components/academy/StudentPortal';
 
 type View = 'list' | 'detail' | 'study';
 type StatusFilter = 'all' | 'published' | 'draft' | 'hst';
@@ -42,7 +43,7 @@ export function AcademyPage() {
     queryKey: ['my-employee', user?.email],
     queryFn: async () => {
       if (!user?.email) return null;
-      const { data } = await supabase.from('employees').select('id').eq('email', user.email).maybeSingle();
+      const { data } = await supabase.from('employees').select('id, full_name').eq('email', user.email).maybeSingle();
       return data;
     },
     enabled: !!user?.email,
@@ -134,6 +135,17 @@ export function AcademyPage() {
   if (isLoading) return <div className="text-center py-12 text-muted-foreground text-sm">{t('academy.loading')}</div>;
 
   const isManager = isAdmin || isAuthor;
+
+  // Students get their own personal learning portal instead of the admin tabs view
+  if (!isManager && !isSupervisor) {
+    return (
+      <StudentPortal
+        employeeId={myEmployee?.id ?? null}
+        employeeName={(myEmployee as any)?.full_name ?? null}
+        onStudyCourse={openStudy}
+      />
+    );
+  }
   const allItems = courses ?? [];
   const items = allItems.filter(c => {
     const matchSearch = !courseSearch || c.title.toLowerCase().includes(courseSearch.toLowerCase());

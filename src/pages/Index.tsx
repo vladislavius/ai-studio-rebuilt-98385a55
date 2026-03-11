@@ -77,8 +77,8 @@ const Index = () => {
   }
 
   return (
-    <div className="min-h-screen flex bg-background relative overflow-hidden">
-      <GradientDots dotSize={2} spacing={22} duration={80} colorCycleDuration={20} className="opacity-[0.03] pointer-events-none z-0" />
+    <div className="min-h-screen flex bg-background relative">
+      <GradientDots dotSize={2} spacing={22} duration={80} colorCycleDuration={20} className="fixed opacity-[0.03] pointer-events-none z-0" />
       {nav.isMobileMenuOpen && (
         <div className="fixed inset-0 bg-background/60 z-30 md:hidden" onClick={nav.closeMobileMenu} />
       )}

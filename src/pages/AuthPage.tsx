@@ -45,8 +45,8 @@ export function AuthPage({ onAuthSuccess }: AuthPageProps) {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4 relative overflow-hidden">
-      <GradientDots dotSize={3} spacing={18} duration={40} colorCycleDuration={10} className="opacity-[0.08] pointer-events-none z-0" />
+    <div className="min-h-screen flex items-center justify-center bg-background p-4 relative">
+      <GradientDots dotSize={3} spacing={18} duration={40} colorCycleDuration={10} className="fixed opacity-[0.08] pointer-events-none z-0" />
       <div className="w-full max-w-md relative z-10">
         {/* Logo */}
         <div className="text-center mb-8">
