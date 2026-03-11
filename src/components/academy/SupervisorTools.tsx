@@ -172,7 +172,7 @@ export function ExtraAssignmentsManager() {
 
   const completeMut = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from('extra_assignments').update({ completed_at: new Date().toISOString() }).eq('id', id);
+      const { error } = await (supabase as any).from('extra_assignments').update({ completed_at: new Date().toISOString() }).eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['extra-assignments'] }),
