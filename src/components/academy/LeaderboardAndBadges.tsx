@@ -23,7 +23,7 @@ export function useBadgeAutoAward(employeeId: string | undefined) {
   const { data: badges } = useQuery({
     queryKey: ['badges'],
     queryFn: async () => {
-      const { data } = await supabase.from('badges').select('*');
+      const { data } = await (supabase as any).from('badges').select('*');
       return data ?? [];
     },
   });
@@ -32,16 +32,16 @@ export function useBadgeAutoAward(employeeId: string | undefined) {
     queryKey: ['student-badges', employeeId],
     queryFn: async () => {
       if (!employeeId) return [];
-      const { data } = await supabase.from('student_badges').select('badge_id, course_id').eq('employee_id', employeeId);
-      return data ?? [];
+      const { data } = await (supabase as any).from('student_badges').select('badge_id, course_id').eq('employee_id', employeeId);
+      return (data ?? []) as { badge_id: string; course_id: string | null }[];
     },
     enabled: !!employeeId,
   });
 
   const awardMut = useMutation({
     mutationFn: async ({ badgeId, courseId }: { badgeId: string; courseId: string | null }) => {
-      const { error } = await supabase.from('student_badges').insert({ employee_id: employeeId, badge_id: badgeId, course_id: courseId });
-      if (error && !error.message.includes('duplicate')) throw error;
+      const { error } = await (supabase as any).from('student_badges').insert({ employee_id: employeeId, badge_id: badgeId, course_id: courseId });
+      if (error && !error.message?.includes('duplicate')) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['student-badges', employeeId] }),
   });
@@ -49,11 +49,11 @@ export function useBadgeAutoAward(employeeId: string | undefined) {
   useEffect(() => {
     if (!progress || !badges || !earned || !employeeId) return;
 
-    const earnedSet = new Set(earned.map(e => `${e.badge_id}:${e.course_id}`));
+    const earnedSet = new Set((earned as any[]).map((e: any) => `${e.badge_id}:${e.course_id}`));
     const completedCourses = progress.filter(p => p.completed_at);
     const certifiedCourses = progress.filter(p => p.certified);
 
-    for (const badge of badges) {
+    for (const badge of (badges as any[])) {
       if (badge.condition_type === 'first_course' && completedCourses.length >= 1) {
         const key = `${badge.id}:null`;
         if (!earnedSet.has(key)) {
@@ -87,7 +87,7 @@ export function StudentBadges({ employeeId }: { employeeId: string }) {
   const { data: earned = [] } = useQuery({
     queryKey: ['student-badges', employeeId],
     queryFn: async () => {
-      const { data } = await supabase.from('student_badges').select('badge_id, course_id, earned_at, badges(title, icon, description)').eq('employee_id', employeeId);
+      const { data } = await (supabase as any).from('student_badges').select('badge_id, course_id, earned_at, badges(title, icon, description)').eq('employee_id', employeeId);
       return (data ?? []) as { badge_id: string; course_id: string | null; earned_at: string; badges: { title: string; icon: string; description: string } }[];
     },
   });
@@ -136,8 +136,8 @@ export function Leaderboard() {
   const { data: studentBadges } = useQuery({
     queryKey: ['all-student-badges'],
     queryFn: async () => {
-      const { data } = await supabase.from('student_badges').select('employee_id');
-      return data ?? [];
+      const { data } = await (supabase as any).from('student_badges').select('employee_id');
+      return (data ?? []) as { employee_id: string }[];
     },
   });
 

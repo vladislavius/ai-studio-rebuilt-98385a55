@@ -500,7 +500,7 @@ export function CourseChecksheet({ courseId, onBack }: Props) {
   };
 
   const handleSaveAsTemplate = async () => {
-    const { error } = await supabase.from('checksheet_templates').insert({ title, description, sections: items.map((it, i) => ({ ...it, order: i + 1 })) });
+    const { error } = await (supabase as any).from('checksheet_templates').insert({ title, description, sections: items.map((it, i) => ({ ...it, order: i + 1 })) });
     if (error) toast.error(error.message); else { toast.success('Шаблон сохранён'); setShowTemplates(false); }
   };
 
@@ -745,7 +745,7 @@ export function CourseChecksheet({ courseId, onBack }: Props) {
             if (items.length > 0 && items.some(it => it.title.trim())) {
               if (!confirm('Существующие пункты будут заменены. Продолжить?')) return;
             }
-            setItems(generated);
+            setItems(generated as ChecksheetItem[]);
             if (generated.length > 0) setSelectedId(generated[0].id);
           }}
           onClose={() => setShowGenerate(false)}
@@ -762,14 +762,14 @@ function TemplatesPanel({ onClose, onSaveAsTemplate, onLoadTemplate }: {
   const { data: templates, refetch } = useQuery({
     queryKey: ['checksheet-templates'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('checksheet_templates').select('*').order('created_at', { ascending: false });
+      const { data, error } = await (supabase as any).from('checksheet_templates').select('*').order('created_at', { ascending: false });
       if (error) throw error; return data;
     },
   });
 
   const deleteTpl = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from('checksheet_templates').delete().eq('id', id);
+      const { error } = await (supabase as any).from('checksheet_templates').delete().eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => { toast.success('Шаблон удалён'); refetch(); },

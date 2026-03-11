@@ -40,12 +40,12 @@ export function TwinningManager() {
   const { data: sessions, isLoading } = useQuery({
     queryKey: ['twinning-sessions'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('twinning_sessions')
         .select('*')
         .order('created_at', { ascending: false });
       if (error) throw error;
-      return data as TwinningSession[];
+      return (data ?? []) as TwinningSession[];
     },
   });
 
@@ -69,7 +69,7 @@ export function TwinningManager() {
 
   const createMut = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from('twinning_sessions').insert({
+      const { error } = await (supabase as any).from('twinning_sessions').insert({
         course_id: form.course_id,
         step_id: form.step_id,
         employee_a_id: form.employee_a_id,
@@ -96,7 +96,7 @@ export function TwinningManager() {
       const empIds = (enrolled ?? []).map(r => r.employee_id);
       if (empIds.length < 2) throw new Error('Нужно минимум 2 студента на курсе');
       // find already paired employees for this course
-      const { data: existing } = await supabase.from('twinning_sessions').select('employee_a_id, employee_b_id')
+      const { data: existing } = await (supabase as any).from('twinning_sessions').select('employee_a_id, employee_b_id')
         .eq('course_id', courseId).in('status', ['pending', 'scheduled']);
       const paired = new Set<string>();
       (existing ?? []).forEach(s => { paired.add(s.employee_a_id); paired.add(s.employee_b_id); });
@@ -111,7 +111,7 @@ export function TwinningManager() {
       for (let i = 0; i + 1 < unpaired.length; i += 2) {
         pairs.push({ employee_a_id: unpaired[i], employee_b_id: unpaired[i + 1], course_id: courseId, step_id: 'auto', supervisor_user_id: user?.id });
       }
-      const { error } = await supabase.from('twinning_sessions').insert(pairs);
+      const { error } = await (supabase as any).from('twinning_sessions').insert(pairs);
       if (error) throw error;
       return pairs.length;
     },
@@ -126,7 +126,7 @@ export function TwinningManager() {
   // Submit feedback for a completed session
   const feedbackMut = useMutation({
     mutationFn: async ({ sessionId, employeeId }: { sessionId: string; employeeId: string }) => {
-      const { error } = await supabase.from('twinning_feedback').upsert({
+      const { error } = await (supabase as any).from('twinning_feedback').upsert({
         session_id: sessionId, employee_id: employeeId,
         rating: feedbackRating, notes: feedbackNotes || null,
       }, { onConflict: 'session_id,employee_id' });
@@ -145,7 +145,7 @@ export function TwinningManager() {
     mutationFn: async ({ id, status }: { id: string; status: TwinningStatus }) => {
       const patch: any = { status };
       if (status === 'completed') patch.completed_at = new Date().toISOString();
-      const { error } = await supabase.from('twinning_sessions').update(patch).eq('id', id);
+      const { error } = await (supabase as any).from('twinning_sessions').update(patch).eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['twinning-sessions'] }),

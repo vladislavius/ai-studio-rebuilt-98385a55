@@ -41,6 +41,33 @@ export type Database = {
         }
         Relationships: []
       }
+      badges: {
+        Row: {
+          condition_type: string
+          created_at: string
+          description: string | null
+          icon: string | null
+          id: string
+          title: string
+        }
+        Insert: {
+          condition_type?: string
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          title: string
+        }
+        Update: {
+          condition_type?: string
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          title?: string
+        }
+        Relationships: []
+      }
       candidates: {
         Row: {
           birth_date: string | null
@@ -178,6 +205,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      checksheet_templates: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          sections: Json
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          sections?: Json
+          title: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          sections?: Json
+          title?: string
+        }
+        Relationships: []
       }
       company_settings: {
         Row: {
@@ -645,6 +699,57 @@ export type Database = {
           whatsapp?: string | null
         }
         Relationships: []
+      }
+      extra_assignments: {
+        Row: {
+          assigned_by: string | null
+          completed_at: string | null
+          course_id: string | null
+          created_at: string
+          description: string | null
+          due_date: string | null
+          employee_id: string
+          id: string
+          title: string
+        }
+        Insert: {
+          assigned_by?: string | null
+          completed_at?: string | null
+          course_id?: string | null
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          employee_id: string
+          id?: string
+          title: string
+        }
+        Update: {
+          assigned_by?: string | null
+          completed_at?: string | null
+          course_id?: string | null
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          employee_id?: string
+          id?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "extra_assignments_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "extra_assignments_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       glossary_terms: {
         Row: {
@@ -1166,6 +1271,97 @@ export type Database = {
           },
         ]
       }
+      student_badges: {
+        Row: {
+          badge_id: string
+          course_id: string | null
+          earned_at: string
+          employee_id: string
+          id: string
+        }
+        Insert: {
+          badge_id: string
+          course_id?: string | null
+          earned_at?: string
+          employee_id: string
+          id?: string
+        }
+        Update: {
+          badge_id?: string
+          course_id?: string | null
+          earned_at?: string
+          employee_id?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_badges_badge_id_fkey"
+            columns: ["badge_id"]
+            isOneToOne: false
+            referencedRelation: "badges"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_badges_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_badges_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      supervisor_step_comments: {
+        Row: {
+          comment: string
+          course_id: string
+          created_at: string
+          employee_id: string
+          id: string
+          step_id: string
+          supervisor_user_id: string
+        }
+        Insert: {
+          comment: string
+          course_id: string
+          created_at?: string
+          employee_id: string
+          id?: string
+          step_id: string
+          supervisor_user_id: string
+        }
+        Update: {
+          comment?: string
+          course_id?: string
+          created_at?: string
+          employee_id?: string
+          id?: string
+          step_id?: string
+          supervisor_user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supervisor_step_comments_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supervisor_step_comments_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       training_messages: {
         Row: {
           course_id: string
@@ -1211,6 +1407,112 @@ export type Database = {
           {
             foreignKeyName: "training_messages_employee_id_fkey"
             columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      twinning_feedback: {
+        Row: {
+          created_at: string
+          employee_id: string
+          id: string
+          notes: string | null
+          rating: number
+          session_id: string
+        }
+        Insert: {
+          created_at?: string
+          employee_id: string
+          id?: string
+          notes?: string | null
+          rating?: number
+          session_id: string
+        }
+        Update: {
+          created_at?: string
+          employee_id?: string
+          id?: string
+          notes?: string | null
+          rating?: number
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "twinning_feedback_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "twinning_feedback_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "twinning_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      twinning_sessions: {
+        Row: {
+          completed_at: string | null
+          course_id: string
+          created_at: string
+          employee_a_id: string
+          employee_b_id: string
+          id: string
+          notes: string | null
+          scheduled_at: string | null
+          status: string
+          step_id: string
+          supervisor_user_id: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          course_id: string
+          created_at?: string
+          employee_a_id: string
+          employee_b_id: string
+          id?: string
+          notes?: string | null
+          scheduled_at?: string | null
+          status?: string
+          step_id: string
+          supervisor_user_id?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          course_id?: string
+          created_at?: string
+          employee_a_id?: string
+          employee_b_id?: string
+          id?: string
+          notes?: string | null
+          scheduled_at?: string | null
+          status?: string
+          step_id?: string
+          supervisor_user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "twinning_sessions_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "twinning_sessions_employee_a_id_fkey"
+            columns: ["employee_a_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "twinning_sessions_employee_b_id_fkey"
+            columns: ["employee_b_id"]
             isOneToOne: false
             referencedRelation: "employees"
             referencedColumns: ["id"]

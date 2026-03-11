@@ -32,17 +32,17 @@ export function SupervisorStepComments({ courseId, employeeId, stepId, stepTitle
   const { data: comments = [] } = useQuery({
     queryKey: ['step-comments', courseId, employeeId, stepId],
     queryFn: async () => {
-      const { data, error } = await supabase.from('supervisor_step_comments').select('*')
+      const { data, error } = await (supabase as any).from('supervisor_step_comments').select('*')
         .eq('course_id', courseId).eq('employee_id', employeeId).eq('step_id', stepId)
         .order('created_at', { ascending: true });
       if (error) throw error;
-      return data as StepComment[];
+      return (data ?? []) as StepComment[];
     },
   });
 
   const addMut = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from('supervisor_step_comments').insert({
+      const { error } = await (supabase as any).from('supervisor_step_comments').insert({
         course_id: courseId, employee_id: employeeId, step_id: stepId,
         comment: text, supervisor_user_id: user?.id,
       });
@@ -125,9 +125,9 @@ export function ExtraAssignmentsManager() {
   const { data: assignments, isLoading } = useQuery({
     queryKey: ['extra-assignments'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('extra_assignments').select('*').order('created_at', { ascending: false });
+      const { data, error } = await (supabase as any).from('extra_assignments').select('*').order('created_at', { ascending: false });
       if (error) throw error;
-      return data as ExtraAssignment[];
+      return (data ?? []) as ExtraAssignment[];
     },
   });
 
@@ -151,7 +151,7 @@ export function ExtraAssignmentsManager() {
 
   const createMut = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from('extra_assignments').insert({
+      const { error } = await (supabase as any).from('extra_assignments').insert({
         employee_id: form.employee_id,
         course_id: form.course_id || null,
         title: form.title,
@@ -172,7 +172,7 @@ export function ExtraAssignmentsManager() {
 
   const completeMut = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from('extra_assignments').update({ completed_at: new Date().toISOString() }).eq('id', id);
+      const { error } = await (supabase as any).from('extra_assignments').update({ completed_at: new Date().toISOString() }).eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['extra-assignments'] }),
@@ -181,7 +181,7 @@ export function ExtraAssignmentsManager() {
 
   const deleteMut = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from('extra_assignments').delete().eq('id', id);
+      const { error } = await (supabase as any).from('extra_assignments').delete().eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['extra-assignments'] }),
