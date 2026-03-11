@@ -762,7 +762,7 @@ function TemplatesPanel({ onClose, onSaveAsTemplate, onLoadTemplate }: {
   const { data: templates, refetch } = useQuery({
     queryKey: ['checksheet-templates'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('checksheet_templates').select('*').order('created_at', { ascending: false });
+      const { data, error } = await (supabase as any).from('checksheet_templates').select('*').order('created_at', { ascending: false });
       if (error) throw error; return data;
     },
   });
