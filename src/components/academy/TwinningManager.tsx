@@ -69,7 +69,7 @@ export function TwinningManager() {
 
   const createMut = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from('twinning_sessions').insert({
+      const { error } = await (supabase as any).from('twinning_sessions').insert({
         course_id: form.course_id,
         step_id: form.step_id,
         employee_a_id: form.employee_a_id,
