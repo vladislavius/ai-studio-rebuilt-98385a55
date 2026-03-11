@@ -53,7 +53,7 @@ export function useBadgeAutoAward(employeeId: string | undefined) {
     const completedCourses = progress.filter(p => p.completed_at);
     const certifiedCourses = progress.filter(p => p.certified);
 
-    for (const badge of badges) {
+    for (const badge of (badges as any[])) {
       if (badge.condition_type === 'first_course' && completedCourses.length >= 1) {
         const key = `${badge.id}:null`;
         if (!earnedSet.has(key)) {
