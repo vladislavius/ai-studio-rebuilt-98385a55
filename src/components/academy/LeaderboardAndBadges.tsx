@@ -87,7 +87,7 @@ export function StudentBadges({ employeeId }: { employeeId: string }) {
   const { data: earned = [] } = useQuery({
     queryKey: ['student-badges', employeeId],
     queryFn: async () => {
-      const { data } = await supabase.from('student_badges').select('badge_id, course_id, earned_at, badges(title, icon, description)').eq('employee_id', employeeId);
+      const { data } = await (supabase as any).from('student_badges').select('badge_id, course_id, earned_at, badges(title, icon, description)').eq('employee_id', employeeId);
       return (data ?? []) as { badge_id: string; course_id: string | null; earned_at: string; badges: { title: string; icon: string; description: string } }[];
     },
   });
