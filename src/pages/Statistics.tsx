@@ -150,38 +150,46 @@ export function StatisticsPage({ selectedDeptId }: StatisticsPageProps) {
   const expandedDef = expandedStatId ? definitions.find(d => d.id === expandedStatId) : null;
   const expandedOwnerDept = expandedDef ? departments?.find(d => d.id === expandedDef.owner_id) : null;
 
+  const expandedRawValues = useMemo(() => {
+    if (!expandedStatId) return [];
+    // Use already-loaded allValuesMap first (instant), fall back to per-stat query
+    const fromMap = valuesMap[expandedStatId];
+    if (fromMap?.length) return fromMap;
+    if (expandedValues?.length) return expandedValues.map(v => ({ date: v.date, value: Number(v.value), value2: v.value2 != null ? Number(v.value2) : null }));
+    return [];
+  }, [expandedStatId, expandedValues, valuesMap]);
+
   const expandedChartData = useMemo(() => {
-    if (!expandedStatId || !expandedValues?.length) return [];
-    const sorted = [...expandedValues].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-    const mapped = sorted.map(v => ({ date: v.date, value: Number(v.value), value2: v.value2 != null ? Number(v.value2) : null }));
-    const filtered = getFilteredValues(mapped, selectedPeriod);
+    if (!expandedStatId || !expandedRawValues.length) return [];
+    const sorted = [...expandedRawValues].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    const filtered = getFilteredValues(sorted, selectedPeriod);
     const trendData = calculateTrendLine(filtered);
     return filtered.map((v, i) => ({
       date: new Date(v.date).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' }),
       rawDate: v.date,
       fact: v.value,
-      plan: (v as any).value2 ?? null,
+      plan: v.value2 ?? null,
       trend: trendData[i]?.trend ?? v.value,
     }));
-  }, [expandedStatId, expandedValues, selectedPeriod]);
+  }, [expandedStatId, expandedRawValues, selectedPeriod]);
 
   const expandedTrend = useMemo(() => {
-    if (!expandedValues?.length) return { current: 0, percent: 0, direction: 'flat' as const, isGood: true };
-    const sorted = [...expandedValues]
+    if (!expandedRawValues.length) return { current: 0, percent: 0, direction: 'flat' as const, isGood: true };
+    const sorted = [...expandedRawValues]
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
       .map(v => ({ date: v.date, value: Number(v.value) }));
     const filtered = getFilteredValues(sorted, selectedPeriod);
     return analyzeTrend(filtered, expandedDef?.inverted ?? false);
-  }, [expandedValues, selectedPeriod, expandedDef]);
+  }, [expandedRawValues, selectedPeriod, expandedDef]);
 
   const expandedCondition = useMemo(() => {
-    if (!expandedValues?.length) return 'non_existence' as const;
-    const sorted = [...expandedValues]
+    if (!expandedRawValues.length) return 'non_existence' as const;
+    const sorted = [...expandedRawValues]
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
       .map(v => ({ date: v.date, value: Number(v.value) }));
     const filtered = getFilteredValues(sorted, selectedPeriod);
     return calculateCondition(filtered, expandedDef?.inverted ?? false);
-  }, [expandedValues, selectedPeriod, expandedDef]);
+  }, [expandedRawValues, selectedPeriod, expandedDef]);
 
   const activeCondition = manualCondition ?? expandedCondition;
   const conditionInfo = getConditionInfo(activeCondition);
