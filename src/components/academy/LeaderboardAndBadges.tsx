@@ -23,7 +23,7 @@ export function useBadgeAutoAward(employeeId: string | undefined) {
   const { data: badges } = useQuery({
     queryKey: ['badges'],
     queryFn: async () => {
-      const { data } = await supabase.from('badges').select('*');
+      const { data } = await (supabase as any).from('badges').select('*');
       return data ?? [];
     },
   });
