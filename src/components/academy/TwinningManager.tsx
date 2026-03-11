@@ -145,7 +145,7 @@ export function TwinningManager() {
     mutationFn: async ({ id, status }: { id: string; status: TwinningStatus }) => {
       const patch: any = { status };
       if (status === 'completed') patch.completed_at = new Date().toISOString();
-      const { error } = await supabase.from('twinning_sessions').update(patch).eq('id', id);
+      const { error } = await (supabase as any).from('twinning_sessions').update(patch).eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['twinning-sessions'] }),
