@@ -148,7 +148,7 @@ export function CourseRoom({ courseId, employeeId, userRoles, onBack }: CourseRo
   });
 
   const pendingWordClearings = useMemo(
-    () => (wordClearingRows ?? []).filter(w => !w.cleared),
+    () => wordClearingRows ?? [],
     [wordClearingRows]
   );
 
